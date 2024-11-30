@@ -9,7 +9,7 @@ packages = [{include = "app"}]
 include = ["pyproject.toml"]
 
 [tool.poetry.scripts]
-cli-tool = "app:main"
+cli-tool = "app.main:app"
 
 [tool.poetry.dependencies]
 python = "^3.13"
