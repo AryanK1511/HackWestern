@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useForm, Controller } from 'react-hook-form';
+import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
@@ -39,20 +39,15 @@ const MACHINES = [
 ];
 
 const formSchema = z.object({
-  zipFile: z.any(),
+  files: z.array(z.any()).min(1, 'At least one file is required'),
   machines: z.array(z.string()).min(1, 'Select at least one machine'),
   language: z.enum(['python', 'javascript']),
   entryPoint: z.string().min(1, 'Entry point is required'),
 });
 
-const validateZipFile = (file: File | null) => {
-  if (!file) return 'File is required';
-  if (!file.name.endsWith('.zip')) return 'File must be a ZIP archive';
-  return true;
-};
-
 export default function UploadForm() {
-  const [file, setFile] = useState<File | null>(null);
+  const [files, setFiles] = useState<File[]>([]);
+  const [downloadLink, setDownloadLink] = useState<string | null>(null);
 
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
@@ -64,12 +59,43 @@ export default function UploadForm() {
   });
 
   function onSubmit(values: z.infer<typeof formSchema>) {
-    const fileValidation = validateZipFile(file);
-    if (fileValidation !== true) {
-      form.setError('zipFile', { message: fileValidation });
-      return;
-    }
-    console.log({ ...values, zipFile: file });
+    const formData = new FormData();
+
+    // Append all files to formData
+    files.forEach((file) => {
+      formData.append('files', file);
+    });
+
+    // Convert machines to JSON string
+    formData.append('machines', JSON.stringify(values.machines));
+    formData.append('language', values.language);
+    formData.append('entryPoint', values.entryPoint);
+
+    // Backend URL (adjust as needed)
+    const backendURL = 'http://localhost:8000/upload';
+
+    fetch(backendURL, {
+      method: 'POST',
+      body: formData,
+    })
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+      })
+      .then((data) => {
+        // Assuming the backend returns a path to the CSV
+        if (data.path) {
+          // Construct the download link (adjust the base URL as needed)
+          const link = `http://localhost:8000/public/${data.path}`;
+          setDownloadLink(link);
+          console.log('Performance metrics generated:', data);
+        }
+      })
+      .catch((error) => {
+        console.error('Error:', error.message);
+      });
   }
 
   return (
@@ -92,27 +118,40 @@ export default function UploadForm() {
           <form onSubmit={form.handleSubmit(onSubmit)} className='space-y-6'>
             <FormField
               control={form.control}
-              name='zipFile'
+              name='files'
               render={({ field }) => (
                 <FormItem>
-                  <FormLabel className='text-white'>Upload ZIP File</FormLabel>
+                  <FormLabel className='text-white'>Select Files</FormLabel>
                   <FormControl>
                     <Input
                       type='file'
-                      accept='.zip'
+                      webkitdirectory='true'
+                      multiple
                       onChange={(e) => {
-                        const selectedFile = e.target.files?.[0] || null;
-                        setFile(selectedFile);
-                        field.onChange(selectedFile);
-                        form.clearErrors('zipFile');
+                        const selectedFiles = e.target.files;
+                        if (selectedFiles) {
+                          const fileArray = Array.from(selectedFiles);
+                          setFiles(fileArray);
+                          form.setValue('files', fileArray);
+                          form.clearErrors('files');
+                        }
                       }}
                       className='text-white bg-white bg-opacity-20 border-none'
                     />
                   </FormControl>
+                  <FormDescription className='text-gray-300'>
+                    Select the files you want to upload
+                  </FormDescription>
                   <FormMessage />
                 </FormItem>
               )}
             />
+            <div className='text-white'>
+              <strong>Selected Files:</strong>{' '}
+              {files.length > 0
+                ? files.map((file) => file.name).join(', ')
+                : 'None'}
+            </div>
             <FormField
               control={form.control}
               name='machines'
@@ -209,6 +248,18 @@ export default function UploadForm() {
             >
               Submit
             </Button>
+
+            {downloadLink && (
+              <div className='mt-4 text-center'>
+                <a
+                  href={downloadLink}
+                  download
+                  className='text-blue-300 hover:text-blue-200 underline'
+                >
+                  Download Performance Metrics CSV
+                </a>
+              </div>
+            )}
           </form>
         </Form>
       </div>

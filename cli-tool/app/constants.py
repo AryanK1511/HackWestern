@@ -13,17 +13,7 @@ DOCKER_COMPOSE_FILE = "tin-docker-compose.yml"
 OUTPUT_FILE_NAME = "tin-report.csv"
 
 # Default machines to be used
-MACHINES = (
-    [
-        {
-            "name": "Ubuntu20.04",
-            "image": "ubuntu:20.04",
-            "enabled": True,
-        },
-        {
-            "name": "Debian11",
-            "image": "debian:bullseye",
-            "enabled": True,
-        },
-    ],
-)
+MACHINES = [
+    {"name": "Ubuntu20.04", "image": "ubuntu:20.04", "enabled": True},
+    {"name": "Debian11", "image": "debian:bullseye", "enabled": True},
+]
