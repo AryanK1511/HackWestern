@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "cli-tool"
+name = "tin"
 version = "0.1.0"
 description = ""
 authors = ["Your Name <you@example.com>"]
@@ -9,12 +9,15 @@ packages = [{include = "app"}]
 include = ["pyproject.toml"]
 
 [tool.poetry.scripts]
-cli-tool = "app.main:app"
+tin = "app.main:app"
 
 [tool.poetry.dependencies]
 python = "^3.13"
 typer = "^0.14.0"
 ruff = "^0.8.1"
+toml = "^0.10.2"
+rich = "^13.9.4"
+pyyaml = "^6.0.2"
 
 
 [build-system]
