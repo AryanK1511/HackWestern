@@ -26,7 +26,7 @@ MACHINES = (
             "enabled": True,
         },
         {
-            "name": "AmazonLinux2",
+            "name": "AmazonLinux2023",
             "image": "amazonlinux:2023",
             "enabled": True,
         },

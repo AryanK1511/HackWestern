@@ -13,120 +13,102 @@ from rich.console import Console
 from typing_extensions import Annotated
 
 console = Console()
-
 app = typer.Typer(
-    help="CLI tool for testing code on different Linux machines using Docker."
+    help="A powerful tool to test your code across multiple machines and gather comprehensive runtime statistics effortlessly ✨"
 )
 
 
-# ========== Command to test code on different machines ========== #
 @app.command()
 def benchmark(
     directory: Annotated[
         Optional[Path],
-        typer.Option("--directory", "-dir", help="Relative path to the code directory"),
+        typer.Option("--directory", "-dir", help="Path to the code directory"),
     ],
     file: Annotated[
         Optional[str],
-        typer.Option("--file", "-f", help="Name of the file that you want to run"),
+        typer.Option("--file", "-f", help="Name of the file to run"),
     ],
     language: Annotated[
         Optional[str],
-        typer.Option(
-            "--language", "-l", help="Language of the code (python, javascript)"
-        ),
+        typer.Option("--language", "-l", help="Code language (python, javascript)"),
     ],
 ):
     """
-    Read config, generate Docker containers, and run the test command on selected machines.
+    Test code in Docker containers on configured machines.
     """
-    config_file = CONFIG_FILE_PATH
-    config = read_config(config_file)
+    if not CONFIG_FILE_PATH.exists():
+        console.print("[bold red]No config file found.[/bold red]")
+        console.print(
+            "[bold]Run [blue underline]tin create-config[/blue underline] to create one.[/bold]"
+        )
+        return
 
+    config = read_config(CONFIG_FILE_PATH)
     directory = Path(directory).expanduser()
 
-    machines = config.get("machines", [])
-    enabled_machines = [m for m in machines if m.get("enabled", False)]
+    enabled_machines = [
+        m for m in config.get("machines", []) if m.get("enabled", False)
+    ]
 
     if not enabled_machines:
-        console.print(
-            "[bold red]No machines are enabled in the config file.[/bold red]"
-        )
+        console.print("[bold red]No enabled machines in config.[/bold red]")
         return
 
     try:
         run_docker_containers_and_collect_stats(
             enabled_machines, language, directory, file, OUTPUT_FILE_NAME
         )
-        console.print(
-            "[bold green]Docker containers executed successfully.[/bold green]"
-        )
-
+        console.print("\n[bold green]Execution successful.[/bold green]")
     except Exception as e:
-        console.print(f"[bold red]Error running Docker containers: {e}[/bold red]")
+        console.print(f"[bold red]Error: {e}[/bold red]")
 
 
-# ========== Command to use th UI version of the CLI tool ========== #
 @app.command()
 def studio():
     """
-    Run the UI version of the CLI tool.
+    Launch the UI version of the tool.
     """
-    console.print("[bold]Starting the UI version of the CLI tool...[/bold]")
+    console.print("[bold]Starting the UI...[/bold]")
     run_ui_docker_container()
 
 
-# ========== Command to create the config file ========== #
 @app.command()
 def create_config():
     """
-    Create the .tin-config.toml in the user's home directory.
+    Generate the config file.
     """
     if CONFIG_FILE_PATH.exists():
-        override = typer.confirm(
-            "The config file already exists. Do you want to override it?"
-        )
-        if not override:
-            console.print("[bold red]Config file creation canceled.[/bold red]")
+        if not typer.confirm("A configuration file already exists. Overwrite?"):
+            console.print("[bold red]Canceled.[/bold red]")
             return
 
-    # Default config structure
     config_data = {
         "machines": [
-            {
-                "name": machine["name"],
-                "image": machine["image"],
-                "enabled": machine["enabled"],
-            }
-            for machine in MACHINES[0]
+            {"name": m["name"], "image": m["image"], "enabled": m["enabled"]}
+            for m in MACHINES[0]
         ]
     }
 
     try:
         with open(CONFIG_FILE_PATH, "w") as f:
             toml.dump(config_data, f)
-        console.print(
-            f"[bold green]Config file created at: {CONFIG_FILE_PATH}[/bold green]"
-        )
+        console.print(f"[bold green]Config saved: {CONFIG_FILE_PATH}[/bold green]")
     except Exception as e:
-        console.print(f"[bold red]Error creating config file: {e}[/bold red]")
+        console.print(f"[bold red]Error: {e}[/bold red]")
 
 
-# ========== Command to delete the config file ========== #
 @app.command()
 def delete_config():
     """
-    Delete the .tin-config.toml if it exists.
+    Remove the config file.
     """
     if CONFIG_FILE_PATH.exists():
         CONFIG_FILE_PATH.unlink()
-        console.print(
-            f"[bold green]Config file deleted: {CONFIG_FILE_PATH}[/bold green]"
-        )
+        console.print(f"[bold green]Deleted: {CONFIG_FILE_PATH}[/bold green]")
     else:
-        console.print("[bold red]No config file found to delete.[/bold red]")
+        console.print("[bold red]No config to delete.[/bold red]")
         console.print(
-            "[bold]Run [blue underline]tin create-config[/blue underline] to create a config file[/bold]"
+            "[bold]Run [blue underline]tin create-config[/blue underline] to create one.[/bold]"
         )
 
 
