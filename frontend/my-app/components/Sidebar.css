@@ -1,0 +1,35 @@
+.sidebar {
+    background-color: #242424;  /* Dark theme background */
+    color: white;
+    border-right: 1px solid #333;
+}
+
+.sidebar ul {
+    list-style-type: none;
+    padding: 0;
+}
+
+.sidebar li {
+    margin: 10px 0;
+}
+
+.sidebar a {
+    text-decoration: none;
+    color: #ffffff;
+    font-size: 16px;
+    padding: 8px 16px;
+    display: block;
+    border-radius: 4px;
+    transition: background-color 0.2s;
+}
+
+.sidebar a:hover {
+    background-color: #333;
+    color: #fff;
+}
+
+.sidebar h2 {
+    padding: 16px;
+    margin: 0;
+    color: #ffffff;
+} 

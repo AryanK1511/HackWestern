@@ -38,3 +38,6 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Add any tempolabs-app specific ignore rules
+/tempolabs-app/
