@@ -19,9 +19,10 @@ export default function FileUploadInterface() {
   }
 
   return (
-    <div className="bg-[#2B2B2B] p-8 rounded-lg w-full max-w-2xl relative">
-      <div className="absolute -top-4 -left-4">
+    <div className="bg-[#2B2B2B] p-8 rounded-lg w-full max-w-2xl">
+      <div className="mb-6 space-y-6">
         <ToggleSwitch isFileUpload={isFileUpload} onToggle={handleToggle} />
+        <hr className="border-t border-gray-600" />
       </div>
       {isFileUpload ? (
         <FileUpload onReady={handleReadyToUpload} />

@@ -1,4 +1,4 @@
-import FileUploadInterface from '../components/FileUploadInterface'
+import FileUploadInterface from '@/components/FileUploadInterface'
 
 export default function Home() {
   return (
@@ -9,8 +9,9 @@ export default function Home() {
       <h1 className="text-4xl font-bold mb-8 text-white" style={{ fontFamily: 'LiHei Pro, sans-serif' }}>
         tin
       </h1>
-      <FileUploadInterface />
+      <div className="w-full max-w-2xl">
+        <FileUploadInterface />
+      </div>
     </main>
   )
 }
-

@@ -20,7 +20,7 @@ export default function FileUpload({ onReady }: FileUploadProps) {
   return (
     <div
       {...getRootProps()}
-      className={`border-2 border-dashed border-gray-400 rounded-lg p-8 text-center cursor-pointer ${
+      className={`border border-dashed border-gray-400 rounded-lg p-8 text-center cursor-pointer ${
         isDragActive ? 'border-blue-500' : ''
       }`}
     >
@@ -30,7 +30,7 @@ export default function FileUpload({ onReady }: FileUploadProps) {
       ) : (
         <>
           <p className="text-white mb-4">Drag and drop your file here, or click to select a file</p>
-          <button className="bg-blue-500 text-white px-4 py-2 rounded-md hover:bg-blue-600 transition-colors">
+          <button className="border border-gray-400 text-gray-400 px-4 py-2 rounded-md hover:bg-gray-700 transition-colors">
             Browse Files
           </button>
         </>
