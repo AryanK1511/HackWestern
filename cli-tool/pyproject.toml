@@ -18,6 +18,7 @@ ruff = "^0.8.1"
 toml = "^0.10.2"
 rich = "^13.9.4"
 pyyaml = "^6.0.2"
+docker = "^7.1.0"
 
 
 [build-system]

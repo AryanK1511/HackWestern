@@ -1,0 +1,10 @@
+services:
+  Ubuntu20.04:
+    command: bash /app/scripts/ubuntu_install.sh
+    image: ubuntu:20.04
+    stdin_open: true
+    tty: true
+    volumes:
+    - /Users/aryankhurana/Developer/HackWestern/test-code/python:/app//Users/aryankhurana/Developer/HackWestern/test-code/python
+    - /Users/aryankhurana/Developer/HackWestern/cli-tool/app/scripts:/app/scripts
+    working_dir: /app
