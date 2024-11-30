@@ -1,0 +1,10 @@
+services:
+  Ubuntu20.04:
+    command: 'bash /app/scripts/ubuntu_install.sh' # Run script and keep container running
+    image: ubuntu:20.04
+    volumes:
+      - ./test-code/javascript:/app/javascript # Mount local javascript directory to /app/javascript
+      - ./cli-tool/scripts:/app/scripts # Mount local cli-tool/scripts to /app/scripts
+    working_dir: /app
+    stdin_open: true
+    tty: true
