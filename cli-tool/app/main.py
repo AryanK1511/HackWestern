@@ -78,7 +78,14 @@ def create_config():
 
     # Default config structure
     config_data = {
-        "machines": MACHINES,
+        "machines": [
+            {
+                "name": machine["name"],
+                "image": machine["image"],
+                "enabled": machine["enabled"],
+            }
+            for machine in MACHINES[0]
+        ]
     }
 
     try:

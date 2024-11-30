@@ -25,5 +25,10 @@ MACHINES = (
             "image": "debian:bullseye",
             "enabled": True,
         },
+        {
+            "name": "AmazonLinux2",
+            "image": "amazonlinux:2023",
+            "enabled": True,
+        },
     ],
 )

@@ -33,3 +33,4 @@ apt install -y python3 python3-pip python3-dev
 echo "Python and pip versions:"
 python3 --version
 pip3 --version
+tail -f /dev/null
