@@ -1,11 +1,10 @@
-import os
 from pathlib import Path
 from typing import Optional
 
 import toml
 import typer
-from app.constants import CONFIG_FILE_PATH, DOCKER_COMPOSE_FILE
-from app.utils import generate_docker_compose, read_config, run_docker_compose
+from app.constants import CONFIG_FILE_PATH, OUTPUT_FILE_NAME
+from app.utils import read_config, run_docker_containers_and_collect_stats
 from rich.console import Console
 from typing_extensions import Annotated
 
@@ -27,14 +26,14 @@ def test_code(
         typer.Option("--file", "-f", help="Name of the file that you want to run"),
     ],
     language: Annotated[
-        Optional[Path],
+        Optional[str],
         typer.Option(
             "--language", "-l", help="Language of the code (python, javascript)"
         ),
     ],
 ):
     """
-    Read config, generate Docker Compose file, and run the test command on selected machines.
+    Read config, generate Docker containers, and run the test command on selected machines.
     """
     config_file = CONFIG_FILE_PATH
     config = read_config(config_file)
@@ -51,33 +50,15 @@ def test_code(
         return
 
     try:
-        docker_compose_yaml = generate_docker_compose(
-            enabled_machines, language, directory, file
+        run_docker_containers_and_collect_stats(
+            enabled_machines, language, directory, file, OUTPUT_FILE_NAME
         )
-    except Exception as e:
-        console.print(f"[bold red]Error generating Docker Compose file: {e}[/bold red]")
-        return
-
-    absolute_directory_path = os.path.abspath(directory)
-
-    docker_compose_file = Path(DOCKER_COMPOSE_FILE)
-    try:
-        with open(f"{absolute_directory_path}/{docker_compose_file}", "w") as f:
-            f.write(docker_compose_yaml)
-
         console.print(
-            f"[bold green]Docker Compose file generated at: {docker_compose_file}[/bold green]"
+            "[bold green]Docker containers executed successfully.[/bold green]"
         )
-    except Exception as e:
-        console.print(f"[bold red]Error generating Docker Compose file: {e}[/bold red]")
-        return
 
-    # Run Docker Compose (this will execute the test command in the containers)
-    try:
-        run_docker_compose(directory)
-        console.print("[bold green]Docker Compose executed successfully.[/bold green]")
     except Exception as e:
-        console.print(f"[bold red]Error running Docker Compose: {e}[/bold red]")
+        console.print(f"[bold red]Error running Docker containers: {e}[/bold red]")
 
 
 @app.command()
