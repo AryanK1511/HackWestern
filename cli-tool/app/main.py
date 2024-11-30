@@ -3,7 +3,7 @@ from typing import Optional
 
 import toml
 import typer
-from app.constants import CONFIG_FILE_PATH, OUTPUT_FILE_NAME
+from app.constants import CONFIG_FILE_PATH, MACHINES, OUTPUT_FILE_NAME
 from app.utils import read_config, run_docker_containers_and_collect_stats
 from rich.console import Console
 from typing_extensions import Annotated
@@ -15,8 +15,9 @@ app = typer.Typer(
 )
 
 
+# ========== Command to test code on different machines ========== #
 @app.command()
-def test_code(
+def benchmark(
     directory: Annotated[
         Optional[Path],
         typer.Option("--directory", "-dir", help="Relative path to the code directory"),
@@ -61,6 +62,7 @@ def test_code(
         console.print(f"[bold red]Error running Docker containers: {e}[/bold red]")
 
 
+# ========== Command to create the config file ========== #
 @app.command()
 def create_config():
     """
@@ -76,18 +78,7 @@ def create_config():
 
     # Default config structure
     config_data = {
-        "machines": [
-            {
-                "name": "Ubuntu20.04",
-                "image": "ubuntu:20.04",
-                "enabled": True,
-            },
-            {
-                "name": "Debian11",
-                "image": "debian:bullseye",
-                "enabled": True,
-            },
-        ],
+        "machines": MACHINES,
     }
 
     try:
@@ -100,6 +91,7 @@ def create_config():
         console.print(f"[bold red]Error creating config file: {e}[/bold red]")
 
 
+# ========== Command to delete the config file ========== #
 @app.command()
 def delete_config():
     """
