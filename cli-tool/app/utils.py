@@ -3,6 +3,9 @@ import os
 import time
 from pathlib import Path
 
+from tabulate import tabulate
+from colorama import Fore, Back, Style, init
+
 import docker
 import toml
 from rich.console import Console
@@ -189,6 +192,8 @@ def run_docker_containers_and_collect_stats(
             console.print(
                 f"[bold red]Error collecting stats for container '{container.name}': {e}[/bold red]"
             )
+            
+    format_table()
 
     # Stop containers after use
     for container in containers:
@@ -202,3 +207,47 @@ def run_docker_containers_and_collect_stats(
             console.print(
                 f"[bold red]Error stopping/removing container '{container.name}': {e}[/bold red]"
             )
+
+
+# ========== Function to format table for CLI ========== #
+def format_table():
+
+    # Initialize colorama with default values
+    init(autoreset=True)
+
+    csv_file = "tin-report.csv"  
+    rows = []
+
+    with open(csv_file, newline='') as f:
+        reader = csv.DictReader(f)
+        for row in reader:
+            rows.append(row)
+
+    headers = ["Timestamp", "Container", "CPU (%)", "Memory (MB)", "Network Received (MB)",
+            "Network Sent (MB)", "Disk Read (MB)", "Disk Write (MB)", "Runtime (s)", "Execution Time (s)"]
+
+    # Prepare the data to match the headers, adding colors to specific columns
+    table_data = []
+    for row in rows:
+        # Colorize columns based on values (e.g., CPU usage in red if high, memory usage in green if low)
+        cpu_color = Fore.RED if float(row["cpu_usage_percentage"]) > 50 else Fore.GREEN
+        memory_color = Fore.RED if float(row["memory_usage_mb"]) > 100 else Fore.GREEN
+        network_color = Fore.CYAN
+        disk_color = Fore.YELLOW
+        info_color = Fore.WHITE
+
+        table_data.append([
+            info_color + row["timestamp"],  
+            info_color + row["container_name"], 
+            cpu_color + row["cpu_usage_percentage"], 
+            memory_color + row["memory_usage_mb"], 
+            network_color + row["network_received_mb"], 
+            network_color + row["network_sent_mb"], 
+            disk_color + row["disk_read_mb"], 
+            disk_color + row["disk_write_mb"], 
+            info_color + row["runtime_seconds"], 
+            info_color + row["code_execution_time_seconds"] 
+        ])
+
+    print(tabulate(table_data, headers=headers, tablefmt="fancy_grid"))
+
