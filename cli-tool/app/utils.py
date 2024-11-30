@@ -1,14 +1,14 @@
 import csv
 import os
 import time
+import webbrowser
 from pathlib import Path
-
-from tabulate import tabulate
-from colorama import Fore, Back, Style, init
 
 import docker
 import toml
+from colorama import Fore, init
 from rich.console import Console
+from tabulate import tabulate
 
 console = Console()
 client = docker.from_env()
@@ -105,6 +105,34 @@ def collect_stats_to_csv(
             time.sleep(1)
 
 
+# ========== Function to run the UI docker container ========== #
+def run_ui_docker_container():
+    """
+    Runs the UI Docker container using the 'tin-ui' image.
+    """
+    try:
+        container = client.containers.run(
+            "tin-ui",
+            name="tin-ui",
+            ports={"3000/tcp": 3000},
+            detach=True,
+        )
+        console.print(
+            f"[bold green]Started UI container '{container.name}' using image 'tin-ui'.[/bold green]"
+        )
+    except Exception as e:
+        console.print(f"[bold red]Error starting UI container: {e}[/bold red]")
+
+    try:
+        console.print(
+            "[cyan]Opening browser to access the UI at 'http://localhost:3000'...[/cyan]"
+        )
+        time.sleep(5)
+        webbrowser.open("http://localhost:3000")
+    except Exception as e:
+        console.print(f"[bold red]Error opening browser: {e}[/bold red]")
+
+
 # ========== Function to run Docker containers and collect stats ========== #
 def run_docker_containers_and_collect_stats(
     machines, language, directory, file, output_file
@@ -197,7 +225,7 @@ def run_docker_containers_and_collect_stats(
             console.print(
                 f"[bold red]Error collecting stats for container '{container.name}': {e}[/bold red]"
             )
-            
+
     format_table()
 
     # Stop containers after use
@@ -216,20 +244,29 @@ def run_docker_containers_and_collect_stats(
 
 # ========== Function to format table for CLI ========== #
 def format_table():
-
     # Initialize colorama with default values
     init(autoreset=True)
 
-    csv_file = "tin-report.csv"  
+    csv_file = "tin-report.csv"
     rows = []
 
-    with open(csv_file, newline='') as f:
+    with open(csv_file, newline="") as f:
         reader = csv.DictReader(f)
         for row in reader:
             rows.append(row)
 
-    headers = ["Timestamp", "Container", "CPU (%)", "Memory (MB)", "Network Received (MB)",
-            "Network Sent (MB)", "Disk Read (MB)", "Disk Write (MB)", "Runtime (s)", "Execution Time (s)"]
+    headers = [
+        "Timestamp",
+        "Container",
+        "CPU (%)",
+        "Memory (MB)",
+        "Network Received (MB)",
+        "Network Sent (MB)",
+        "Disk Read (MB)",
+        "Disk Write (MB)",
+        "Runtime (s)",
+        "Execution Time (s)",
+    ]
 
     # Prepare the data to match the headers, adding colors to specific columns
     table_data = []
@@ -241,18 +278,19 @@ def format_table():
         disk_color = Fore.YELLOW
         info_color = Fore.WHITE
 
-        table_data.append([
-            info_color + row["timestamp"],  
-            info_color + row["container_name"], 
-            cpu_color + row["cpu_usage_percentage"], 
-            memory_color + row["memory_usage_mb"], 
-            network_color + row["network_received_mb"], 
-            network_color + row["network_sent_mb"], 
-            disk_color + row["disk_read_mb"], 
-            disk_color + row["disk_write_mb"], 
-            info_color + row["runtime_seconds"], 
-            info_color + row["code_execution_time_seconds"] 
-        ])
+        table_data.append(
+            [
+                info_color + row["timestamp"],
+                info_color + row["container_name"],
+                cpu_color + row["cpu_usage_percentage"],
+                memory_color + row["memory_usage_mb"],
+                network_color + row["network_received_mb"],
+                network_color + row["network_sent_mb"],
+                disk_color + row["disk_read_mb"],
+                disk_color + row["disk_write_mb"],
+                info_color + row["runtime_seconds"],
+                info_color + row["code_execution_time_seconds"],
+            ]
+        )
 
     print(tabulate(table_data, headers=headers, tablefmt="fancy_grid"))
-

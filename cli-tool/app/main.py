@@ -4,7 +4,11 @@ from typing import Optional
 import toml
 import typer
 from app.constants import CONFIG_FILE_PATH, MACHINES, OUTPUT_FILE_NAME
-from app.utils import read_config, run_docker_containers_and_collect_stats
+from app.utils import (
+    read_config,
+    run_docker_containers_and_collect_stats,
+    run_ui_docker_container,
+)
 from rich.console import Console
 from typing_extensions import Annotated
 
@@ -60,6 +64,16 @@ def benchmark(
 
     except Exception as e:
         console.print(f"[bold red]Error running Docker containers: {e}[/bold red]")
+
+
+# ========== Command to use th UI version of the CLI tool ========== #
+@app.command()
+def studio():
+    """
+    Run the UI version of the CLI tool.
+    """
+    console.print("[bold]Starting the UI version of the CLI tool...[/bold]")
+    run_ui_docker_container()
 
 
 # ========== Command to create the config file ========== #
