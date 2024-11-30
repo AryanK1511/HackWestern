@@ -1,0 +1,55 @@
+# Python bytecode files
+*.pyc
+*.pyo
+__pycache__/
+
+# Environment variables
+.env
+*.env
+
+# Virtual environment directories
+venv/
+env/
+*.venv
+*.env/
+
+# IDE files
+.idea/
+.vscode/
+
+# Test coverage reports
+.coverage
+*.cover
+nosetests.xml
+coverage.xml
+*.hypothesis/
+
+# Distribution / packaging
+*.egg
+*.egg-info/
+dist/
+build/
+.eggs/
+MANIFEST
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints
+
+# PyInstaller
+#  PyInstaller creates a lot of files in the dist folder.
+dist/
+*.spec
+
+# Pylint, Flake8, or other linter configuration
+pylint_reports/
+
+# MyPy type checking
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# macOS
+.DS_Store
+
+# Windows
+Thumbs.db
