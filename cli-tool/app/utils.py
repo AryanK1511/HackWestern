@@ -56,13 +56,13 @@ def collect_stats_to_csv(
         while True:
             stats = container.stats(stream=False)
             cpu_usage_ns = stats["cpu_stats"]["cpu_usage"]["total_usage"]
-            system_cpu_usage_ns = stats["cpu_stats"]["system_cpu_usage"]
+            system_cpu_usage_ns = stats["cpu_stats"].get("system_cpu_usage", 0)
             cpu_percentage = 0
 
             if system_cpu_usage_ns > 0:
                 cpu_percentage = (cpu_usage_ns / system_cpu_usage_ns) * 100
 
-            memory_usage_bytes = stats["memory_stats"]["usage"]
+            memory_usage_bytes = stats["memory_stats"].get("usage", 0)
             memory_usage_mb = memory_usage_bytes / (1024 * 1024)
 
             network_stats = stats["networks"]
@@ -154,10 +154,15 @@ def run_docker_containers_and_collect_stats(
     containers = []
     for machine in machines:
         try:
+            if machine["name"] == "AmazonLinux2":
+                command = "bash /scripts/amazon_install.sh"
+            else:
+                command = "bash /scripts/linux_install.sh"
+
             container = client.containers.run(
                 machine["image"],
                 name=machine["name"],
-                command="bash /scripts/linux_install.sh",
+                command=command,
                 volumes={
                     absolute_directory_path: {"bind": "/app", "mode": "rw"},
                     os.path.join(os.path.dirname(__file__), "scripts"): {
