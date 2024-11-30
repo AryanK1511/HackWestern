@@ -15,9 +15,9 @@ apt update -y
 echo "Installing curl..."
 apt install -y curl
 
-
-# Install Node.js
+# Install Node.js and npm (from the official NodeSource repository)
 echo "Installing Node.js..."
+curl -fsSL https://deb.nodesource.com/setup_16.x | bash -  # For Node.js 16 (LTS)
 apt install -y nodejs
 
 # Verify Node installation
@@ -25,20 +25,11 @@ echo "Node.js and npm versions:"
 node -v
 npm -v
 
-# Install Python
+# Install Python 3 and related dependencies
 echo "Installing Python..."
-apt install -y python3
-
-# Install Pip
-echo "Installing Pip..."
-apt install -y pip
+apt install -y python3 python3-pip python3-dev
 
 # Verify Python and Pip installation
 echo "Python and pip versions:"
 python3 --version
-pip --version
 pip3 --version
-tail -f /dev/null
-
-
-
