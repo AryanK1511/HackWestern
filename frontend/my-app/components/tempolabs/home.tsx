@@ -170,19 +170,27 @@ export default function Home() {
         <div className="container mx-auto p-6 space-y-8">
             {/* Chart Section */}
             <div className="bg-white rounded-lg p-6 shadow-sm mb-8">
-                <div className="flex justify-between items-center mb-6">
-                    <h2 className="text-xl font-bold">Distribution Comparison</h2>
-                    <select 
-                        value={selectedMetric}
-                        onChange={(e) => setSelectedMetric(e.target.value)}
-                        className="border rounded-md p-2"
-                    >
+                <h2 className="text-xl font-bold mb-6">Distribution Comparison</h2>
+                
+                {/* Centered button group */}
+                <div className="flex justify-center mb-6">
+                    <div className="inline-flex flex-wrap gap-2 p-1 bg-gray-100 rounded-lg">
                         {metricOptions.map((option) => (
-                            <option key={option.value} value={option.value}>
+                            <button
+                                key={option.value}
+                                onClick={() => setSelectedMetric(option.value)}
+                                className={`
+                                    flex-1 px-4 py-2 rounded-md text-sm font-medium transition-all min-w-[120px]
+                                    ${selectedMetric === option.value 
+                                        ? 'bg-white text-gray-900 shadow-sm' 
+                                        : 'text-gray-600 hover:text-gray-900 hover:bg-gray-50'
+                                    }
+                                `}
+                            >
                                 {option.label}
-                            </option>
+                            </button>
                         ))}
-                    </select>
+                    </div>
                 </div>
 
                 <div className="h-[400px]">
