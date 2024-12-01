@@ -1,5 +1,4 @@
 import csv
-import json
 import os
 import shutil
 import time
@@ -7,18 +6,6 @@ from http.client import HTTPException
 
 import docker
 from app.constants import MACHINES
-from fastapi import FastAPI, File, Form, UploadFile
-from fastapi.middleware.cors import CORSMiddleware
-
-app = FastAPI()
-
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["*"],
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 UPLOAD_DIRECTORY = "uploads"
 client = docker.from_env()
@@ -44,19 +31,37 @@ def run_code_in_container(machine_configs, folder_path, language, entryPoint):
 
     for machine_config in machine_configs:
         try:
-            container = client.containers.run(
-                machine_config["image"],
-                name=machine_config["name"],
-                command="bash /scripts/linux_install.sh",
-                volumes={
-                    abs_folder_path: {"bind": "/app", "mode": "rw"},
-                    scripts_path: {"bind": "/scripts", "mode": "rw"},
-                },
-                working_dir="/app",
-                stdin_open=True,
-                tty=True,
-                detach=True,
-            )
+            container = None
+
+            if machine_config["image"] == "amazonlinux:2023":
+                container = client.containers.run(
+                    machine_config["image"],
+                    name=machine_config["name"],
+                    command="bash /scripts/amazon_install.sh",
+                    volumes={
+                        abs_folder_path: {"bind": "/app", "mode": "rw"},
+                        scripts_path: {"bind": "/scripts", "mode": "rw"},
+                    },
+                    working_dir="/app",
+                    stdin_open=True,
+                    tty=True,
+                    detach=True,
+                )
+            else:
+                container = client.containers.run(
+                    machine_config["image"],
+                    name=machine_config["name"],
+                    command="bash /scripts/linux_install.sh",
+                    volumes={
+                        abs_folder_path: {"bind": "/app", "mode": "rw"},
+                        scripts_path: {"bind": "/scripts", "mode": "rw"},
+                    },
+                    working_dir="/app",
+                    stdin_open=True,
+                    tty=True,
+                    detach=True,
+                )
+
             containers.append(container)
         except Exception as e:
             print(f"Error running container: {str(e)}")
@@ -85,7 +90,6 @@ def run_code_in_container(machine_configs, folder_path, language, entryPoint):
             print(f"Error collecting stats: {str(e)}")
             return str(e)
 
-    # Stop containers after use
     for container in containers:
         try:
             container.stop()
@@ -96,6 +100,7 @@ def run_code_in_container(machine_configs, folder_path, language, entryPoint):
 
 
 def save_uploaded_file(folder_path: str, file):
+    """Saves an uploaded file to the specified folder"""
     try:
         file_location = os.path.join(folder_path, file.filename)
         os.makedirs(os.path.dirname(file_location), exist_ok=True)
@@ -190,62 +195,3 @@ def collect_stats_to_csv(
                 break
 
             time.sleep(1)
-
-
-@app.post("/upload")
-async def process_upload(
-    machines: str = Form(...),
-    language: str = Form(...),
-    entryPoint: str = Form(...),
-    files: list[UploadFile] = File(...),
-):
-    # Base upload directory
-    base_folder_path = "uploads/uploaded_files"
-    output_file = "tin-report.csv"  # CSV file path
-
-    # Determine the path to the parent public folder
-    current_dir = os.path.dirname(__file__)
-    public_folder = os.path.abspath(
-        os.path.join(current_dir, "..", "..", "..", "frontend", "public")
-    )
-
-    # Ensure the public folder exists
-    os.makedirs(public_folder, exist_ok=True)
-
-    # Path to save the CSV in the public folder
-    public_csv_path = os.path.join(public_folder, "tin-report.csv")
-
-    # List to track saved files
-    saved_files = []
-
-    for file in files:
-        try:
-            saved_location = save_uploaded_file(base_folder_path, file)
-            saved_files.append(saved_location)
-        except HTTPException:
-            print(f"Failed to upload {file.filename}")
-
-    # Parse the machine configurations
-    try:
-        machines_list = json.loads(machines)
-        machine_configs = create_machine_config(machines_list)
-    except json.JSONDecodeError:
-        raise HTTPException(status_code=400, detail="Invalid machines format.")
-
-    # Run code in container and generate CSV
-    run_code_in_container(machine_configs, base_folder_path, language, entryPoint)
-
-    # Check if original CSV file exists
-    if not os.path.exists(output_file):
-        raise HTTPException(status_code=404, detail="CSV file not generated")
-
-    # Copy the CSV to the public folder
-    try:
-        shutil.copy(output_file, public_csv_path)
-        print(f"CSV copied to {public_csv_path}")
-    except Exception as e:
-        print(f"Error copying CSV to public folder: {e}")
-        raise HTTPException(status_code=500, detail=f"Failed to copy CSV: {str(e)}")
-
-    # Optionally return a success response
-    return {"message": "CSV saved to public folder", "path": "tin-report.csv"}

@@ -1,5 +1,6 @@
 import csv
 import os
+import subprocess
 import time
 import webbrowser
 from pathlib import Path
@@ -14,8 +15,10 @@ console = Console()
 client = docker.from_env()
 
 
-# ========== Function to read config ========== #
 def read_config(config_path: Path):
+    """
+    Reads configuration from a TOML file.
+    """
     try:
         config = toml.load(config_path)
         return config
@@ -24,13 +27,11 @@ def read_config(config_path: Path):
         raise
 
 
-# ========== Function to collect stats to CSV ========== #
 def collect_stats_to_csv(
     container, output_file, runtime_limit=500, code_execution_time=None
 ):
     """
-    Collects stats from a single container and writes them to a CSV file.
-    Stops after the specified runtime_limit (in seconds).
+    Collects stats from a Docker container and writes them to a CSV file.
     """
     start_time = time.time()
     write_headers = not os.path.exists(output_file)
@@ -57,32 +58,22 @@ def collect_stats_to_csv(
             stats = container.stats(stream=False)
             cpu_usage_ns = stats["cpu_stats"]["cpu_usage"]["total_usage"]
             system_cpu_usage_ns = stats["cpu_stats"].get("system_cpu_usage", 0)
-            cpu_percentage = 0
-
-            if system_cpu_usage_ns > 0:
-                cpu_percentage = (cpu_usage_ns / system_cpu_usage_ns) * 100
-
-            memory_usage_bytes = stats["memory_stats"].get("usage", 0)
-            memory_usage_mb = memory_usage_bytes / (1024 * 1024)
-
+            cpu_percentage = (
+                (cpu_usage_ns / system_cpu_usage_ns) * 100
+                if system_cpu_usage_ns > 0
+                else 0
+            )
+            memory_usage_mb = stats["memory_stats"].get("usage", 0) / (1024 * 1024)
             network_stats = stats["networks"]
-            network_in = 0
-            network_out = 0
-            for network in network_stats.values():
-                network_in += network["rx_bytes"]
-                network_out += network["tx_bytes"]
-
-            disk_read_mb = 0
-            disk_write_mb = 0
-            if "storage_stats" in stats:
-                disk_read = stats["storage_stats"].get("read", 0)
-                disk_write = stats["storage_stats"].get("write", 0)
-                disk_read_mb = disk_read / (1024 * 1024)
-                disk_write_mb = disk_write / (1024 * 1024)
-
+            network_in = sum(network["rx_bytes"] for network in network_stats.values())
+            network_out = sum(network["tx_bytes"] for network in network_stats.values())
+            disk_read_mb = stats.get("storage_stats", {}).get("read", 0) / (1024 * 1024)
+            disk_write_mb = stats.get("storage_stats", {}).get("write", 0) / (
+                1024 * 1024
+            )
             runtime_seconds = time.time() - start_time
-
             timestamp = time.strftime("%Y-%m-%d %H:%M:%S", time.gmtime())
+
             writer.writerow(
                 [
                     timestamp,
@@ -105,14 +96,59 @@ def collect_stats_to_csv(
             time.sleep(1)
 
 
-# ========== Function to run the UI docker container ========== #
-def run_ui_docker_container():
+def stop_containers_on_port(port):
     """
-    Runs the UI Docker container using the 'tin-ui' image.
+    Stops any containers that are using the specified port.
     """
     try:
+        containers = client.containers.list(all=True)
+
+        for container in containers:
+            container_info = container.attrs
+            for port_binding in container_info["NetworkSettings"]["Ports"]:
+                if port_binding == f"{port}/tcp":
+                    console.print(
+                        f"[bold yellow]Stopping container '{container.name}' on port {port}...[/bold yellow]"
+                    )
+                    container.stop()
+                    container.remove()
+                    console.print(
+                        f"[bold green]Stopped and removed container '{container.name}'.[/bold green]"
+                    )
+                    break
+    except Exception as e:
+        console.print(
+            f"[bold red]Error stopping containers on port {port}: {e}[/bold red]"
+        )
+
+
+def start_backend():
+    """
+    Starts the backend with the FastAPI app.
+    """
+    try:
+        subprocess.Popen(
+            ["uvicorn", "app.api.main:app", "--reload"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        console.print("[bold green]Started backend locally using uvicorn.[/bold green]")
+    except Exception as e:
+        console.print(f"[bold red]Error running backend locally: {e}[/bold red]")
+
+
+def run_ui():
+    """
+    Runs the UI version of the tool.
+    """
+    try:
+        stop_containers_on_port(8000)
+        start_backend()
+        time.sleep(5)
+        stop_containers_on_port(3000)
+
         container = client.containers.run(
-            "tin-ui",
+            "tin-ui",  # Replace with your UI image name
             name="tin-ui",
             ports={"3000/tcp": 3000},
             detach=True,
@@ -133,13 +169,11 @@ def run_ui_docker_container():
         console.print(f"[bold red]Error opening browser: {e}[/bold red]")
 
 
-# ========== Function to run Docker containers and collect stats ========== #
 def run_docker_containers_and_collect_stats(
     machines, language, directory, file, output_file
 ):
     """
-    Starts Docker containers based on the selected machines, runs the provided code,
-    and collects stats to output to a CSV file.
+    Runs Docker containers for the specified machines, executes code, and collects stats.
     """
     absolute_directory_path = os.path.abspath(directory)
 
@@ -152,13 +186,16 @@ def run_docker_containers_and_collect_stats(
         )
 
     containers = []
+    stats = []
+
+    console.print("🔧 [bold blue]Setting up containers...[/bold blue]")
     for machine in machines:
         try:
-            if machine["name"] == "AmazonLinux2":
-                command = "bash /scripts/amazon_install.sh"
-            else:
-                command = "bash /scripts/linux_install.sh"
-
+            command = (
+                "bash /scripts/amazon_install.sh"
+                if machine["name"] == "AmazonLinux2"
+                else "bash /scripts/linux_install.sh"
+            )
             container = client.containers.run(
                 machine["image"],
                 name=machine["name"],
@@ -176,77 +213,69 @@ def run_docker_containers_and_collect_stats(
                 detach=True,
             )
             containers.append(container)
-            console.print(
-                f"[bold green]Started container '{container.name}' using image '{machine['image']}'.[/bold green]"
-            )
+            console.print(f"✅ [green]Started container '{container.name}'.[/green]")
         except Exception as e:
             console.print(
-                f"[bold red]Error starting container for machine '{machine['name']}': {e}[/bold red]"
+                f"❌ [bold red]Error starting container for '{machine['name']}': {e}[/bold red]"
             )
 
+    console.print("⚙️ [bold blue]Executing code in containers...[/bold blue]")
     for container in containers:
         code_execution_time = None
+        success = True
         try:
             start_exec_time = time.time()
             if language == "python":
-                print("Running Python code in container...")
-                console.print(
-                    f"[cyan]Running Python code in container '{container.name}'...[/cyan]"
-                )
                 container.exec_run(f"python3 {file}", stdout=True, stderr=True)
-                console.print(
-                    f"[green]Python code executed in '{container.name}'.[/green]"
-                )
             elif language == "javascript":
-                console.print(
-                    f"[cyan]Running JavaScript code in container '{container.name}'...[/cyan]"
-                )
                 container.exec_run(f"node {file}", stdout=True, stderr=True)
-                console.print(
-                    f"[green]JavaScript code executed in '{container.name}'.[/green]"
-                )
             code_execution_time = time.time() - start_exec_time
+            console.print(f"✅ [green]Executed code in '{container.name}'.[/green]")
         except Exception as e:
             console.print(
-                f"[bold red]Error running command in container '{container.name}': {e}[/bold red]"
+                f"❌ [bold red]Error executing code in '{container.name}': {e}[/bold red]"
             )
+            success = False
 
         try:
-            console.print(
-                f"[cyan]Collecting stats for container '{container.name}'...[/cyan]"
-            )
             collect_stats_to_csv(
                 container, output_file, code_execution_time=code_execution_time
             )
-            console.print(
-                f"[green]Stats collected successfully for '{container.name}'.[/green]"
-            )
         except Exception as e:
             console.print(
-                f"[bold red]Error collecting stats for container '{container.name}': {e}[/bold red]"
+                f"❌ [bold red]Error collecting stats for '{container.name}': {e}[/bold red]"
             )
+            success = False
 
+        stats.append(
+            {
+                "container": container.name,
+                "status": "Success" if success else "Failed",
+                "execution_time": code_execution_time if success else None,
+                "success": success,
+            }
+        )
+
+    console.print("🚀 [bold blue]Docker Execution Summary[/bold blue]")
     format_table()
 
-    # Stop containers after use
+    console.print("🧹 [bold blue]Cleaning up containers...[/bold blue]")
     for container in containers:
         try:
             container.stop()
             container.remove()
-            console.print(
-                f"[bold yellow]Stopped and removed container '{container.name}'.[/bold yellow]"
-            )
+            console.print(f"🗑️ [yellow]Stopped and removed '{container.name}'.[/yellow]")
         except Exception as e:
             console.print(
-                f"[bold red]Error stopping/removing container '{container.name}': {e}[/bold red]"
+                f"❌ [bold red]Error removing container '{container.name}': {e}[/bold red]"
             )
 
 
-# ========== Function to format table for CLI ========== #
 def format_table():
-    # Initialize colorama with default values
+    """
+    Formats and prints a summary table from the collected CSV data.
+    """
     init(autoreset=True)
-
     csv_file = "tin-report.csv"
     rows = []
 
@@ -268,29 +297,24 @@ def format_table():
         "Execution Time (s)",
     ]
 
-    # Prepare the data to match the headers, adding colors to specific columns
-    table_data = []
-    for row in rows:
-        # Colorize columns based on values (e.g., CPU usage in red if high, memory usage in green if low)
-        cpu_color = Fore.RED if float(row["cpu_usage_percentage"]) > 50 else Fore.GREEN
-        memory_color = Fore.RED if float(row["memory_usage_mb"]) > 100 else Fore.GREEN
-        network_color = Fore.CYAN
-        disk_color = Fore.YELLOW
-        info_color = Fore.WHITE
-
-        table_data.append(
-            [
-                info_color + row["timestamp"],
-                info_color + row["container_name"],
-                cpu_color + row["cpu_usage_percentage"],
-                memory_color + row["memory_usage_mb"],
-                network_color + row["network_received_mb"],
-                network_color + row["network_sent_mb"],
-                disk_color + row["disk_read_mb"],
-                disk_color + row["disk_write_mb"],
-                info_color + row["runtime_seconds"],
-                info_color + row["code_execution_time_seconds"],
-            ]
-        )
+    table_data = [
+        [
+            Fore.WHITE + row["timestamp"],
+            Fore.WHITE + row["container_name"],
+            Fore.RED
+            if float(row["cpu_usage_percentage"]) > 50
+            else Fore.GREEN + row["cpu_usage_percentage"],
+            Fore.RED
+            if float(row["memory_usage_mb"]) > 100
+            else Fore.GREEN + row["memory_usage_mb"],
+            Fore.CYAN + row["network_received_mb"],
+            Fore.CYAN + row["network_sent_mb"],
+            Fore.YELLOW + row["disk_read_mb"],
+            Fore.YELLOW + row["disk_write_mb"],
+            Fore.WHITE + row["runtime_seconds"],
+            Fore.WHITE + row["code_execution_time_seconds"],
+        ]
+        for row in rows
+    ]
 
     print(tabulate(table_data, headers=headers, tablefmt="fancy_grid"))
