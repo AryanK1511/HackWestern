@@ -29,10 +29,10 @@ app = FastAPI()
 # Add CORS middleware with more permissive settings for development
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=["http://localhost:3000"],
     allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
+    allow_methods=["POST"],
+    allow_headers=["Content-Type"],
 )
 
 
@@ -86,7 +86,7 @@ class ChatGPTInteraction:
 chat_interaction = ChatGPTInteraction()
 
 
-@app.post("/chat")
+@app.post("/api/chat")
 async def chat(request: ChatRequest):
     try:
         logger.info("Received chat request")

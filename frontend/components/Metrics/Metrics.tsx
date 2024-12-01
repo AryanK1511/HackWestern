@@ -283,13 +283,13 @@ const Metrics: React.FC = () => {
         csvPreview: csvData.slice(0, 200),
       });
 
-      const response = await fetch('/api/chat', {
+      const response = await fetch('http://localhost:5000/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          message: newMessage,
+          user_prompt: newMessage,
           csv_data: csvData,
         }),
       });
