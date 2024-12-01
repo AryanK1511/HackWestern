@@ -191,11 +191,15 @@ def run_docker_containers_and_collect_stats(
     console.print("🔧 [bold blue]Setting up containers...[/bold blue]")
     for machine in machines:
         try:
-            command = (
-                "bash /scripts/amazon_install.sh"
-                if machine["name"] == "AmazonLinux2"
-                else "bash /scripts/linux_install.sh"
-            )
+            command = None
+
+            if machine["name"].startswith("AmazonLinux2"):
+                command = "bash /scripts/amazon_install.sh"
+            elif machine["name"].startswith("Oracle"):
+                command = "bash /scripts/oracle_install.sh"
+            else:
+                command = "bash /scripts/linux_install.sh"
+
             container = client.containers.run(
                 machine["image"],
                 name=machine["name"],
