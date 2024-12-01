@@ -144,10 +144,13 @@ const Metrics: React.FC = () => {
     const containerData = data.find((d) => d.container_name === containerName);
     if (!containerData) return { cpu: 0, memory: 0, completion: 0 };
 
+    const maxCompletion = Math.max(...data.map((d) => d.code_execution_time_seconds)) || 1;
+    const maxMemory = Math.max(...data.map((d) => d.memory_usage_mb)) || 1;
+  
     return {
       cpu: containerData.cpu_usage_percentage,
-      memory: containerData.memory_usage_mb,
-      completion: containerData.code_execution_time_seconds * 1000,
+      memory: (containerData.memory_usage_mb / maxMemory) * 100,
+      completion: (containerData.code_execution_time_seconds / maxCompletion) * 100,
     };
   };
 
@@ -176,6 +179,10 @@ const Metrics: React.FC = () => {
   );
 
   const getChartData = () => {
+    const maxValue = Math.max(
+        ...data.map((d) => Number(d[selectedMetric as keyof MetricData]) || 0)
+    );
+
     const chartData = {
       labels: sortedDistros,
       datasets: [
@@ -185,7 +192,7 @@ const Metrics: React.FC = () => {
             const value = data.find((d) => d.container_name === distro)?.[
               selectedMetric as keyof MetricData
             ] || 0;
-            return Number(value);
+            return maxValue ? (Number(value) / maxValue) * 100 : 0;
           }),
           backgroundColor: '#f97316',
           borderRadius: 6,
@@ -475,38 +482,38 @@ const Metrics: React.FC = () => {
         <div>
           <h2 className='text-xl font-bold mb-6 text-white'>Performance Trends</h2>
           <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-            <div className='flex items-center gap-4 text-white'>
+            <div className='flex items-center gap-4 text-black'>
               <span>Average Completion Time</span>
-              <span className='text-green-500 text-sm'>+5%</span>
+              <span className='text-green-500 text-sm'>{getAverageMetrics().completion.toFixed(2)}ms</span>
               <div className='flex-1 bg-gray-200 rounded-full h-2'>
                 <div
                   className='bg-blue-600 h-2 rounded-full'
                   style={{
-                    width: `${Math.min(getAverageMetrics().completion / 1000, 100)}%`,
+                    width: `${getAverageMetrics().completion.toFixed(2)}ms`,
                   }}
                 ></div>
               </div>
             </div>
-            <div className='flex items-center gap-4 text-white'>
+            <div className='flex items-center gap-4 text-black'>
               <span>Average CPU Usage</span>
-              <span className='text-red-500 text-sm'>-5%</span>
+              <span className='text-red-500 text-sm'>{getAverageMetrics().cpu.toFixed(2)}%</span> 
               <div className='flex-1 bg-gray-200 rounded-full h-2'>
                 <div
                   className='bg-blue-600 h-2 rounded-full'
                   style={{
-                    width: `${Math.min(getAverageMetrics().cpu, 100)}%`,
+                    width: `${getAverageMetrics().cpu.toFixed(2)}%`,
                   }}
                 ></div>
               </div>
             </div>
-            <div className='flex items-center gap-4 text-white'>
+            <div className='flex items-center gap-4 text-black'>
               <span>Average Memory Usage</span>
-              <span className='text-red-500 text-sm'>-5%</span>
+              <span className='text-red-500 text-sm'>{getAverageMetrics().completion.toFixed(2)}MB</span> 
               <div className='flex-1 bg-gray-200 rounded-full h-2'>
                 <div
                   className='bg-blue-600 h-2 rounded-full'
                   style={{
-                    width: `${Math.min(getAverageMetrics().memory, 100)}%`,
+                    width: `${getAverageMetrics().completion.toFixed(2)}MB`,
                   }}
                 ></div>
               </div>
@@ -525,18 +532,18 @@ interface MetricBarProps {
 }
 
 const MetricBar: React.FC<MetricBarProps> = ({ label, value, unit }) => (
-  <div>
-    <div className='flex justify-between mb-1'>
-      <span>{label}</span>
-      <span>{value.toFixed(1)}{unit}</span>
+    <div>
+      <div className='flex justify-between mb-1'>
+        <span>{label}</span>
+        <span>{value.toFixed(1)}{unit}</span>
+      </div>
+      <div className='bg-gray-200 rounded-full h-2'>
+        <div
+          className='bg-blue-600 h-2 rounded-full'
+          style={{ width: `${Math.min(value, 100)}%` }} // Cap at 100%
+        ></div>
+      </div>
     </div>
-    <div className='bg-gray-200 rounded-full h-2'>
-    <div
-      className='bg-blue-600 h-2 rounded-full'
-      style={{ width: `${Math.min((value / 100) * 100, 100)}%` }}
-    ></div>
-    </div>
-  </div>
-);
+  );
 
 export default Metrics;
