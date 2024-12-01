@@ -151,11 +151,7 @@ const Metrics: React.FC = () => {
     };
   };
 
-  const ubuntuMetrics = getMetrics('Ubuntu20.04');
-  const debianMetrics = getMetrics('Debian11');
-  const amiMetrics = getMetrics('AmazonLinux2023');
-
-  const sortedDistros = ['Ubuntu20.04', 'Debian11', 'AmazonLinux2023'].sort(
+  const sortedDistros = [...new Set(data.map(d => d.container_name))].sort(
     (a, b) => getMetricValue(b) - getMetricValue(a)
   );
 
@@ -181,19 +177,17 @@ const Metrics: React.FC = () => {
 
   const getChartData = () => {
     const chartData = {
-      labels: ['Ubuntu20.04', 'Debian11', 'AmazonLinux2023'],
+      labels: sortedDistros,
       datasets: [
         {
-          label:
-            metricOptions.find((m) => m.value === selectedMetric)?.label || '',
-          data: ['Ubuntu20.04', 'Debian11', 'AmazonLinux2023'].map((distro) => {
-            const value =
-              data.find((d) => d.container_name === distro)?.[
-                selectedMetric as keyof MetricData
-              ] || 0;
+          label: metricOptions.find((m) => m.value === selectedMetric)?.label || '',
+          data: sortedDistros.map((distro) => {
+            const value = data.find((d) => d.container_name === distro)?.[
+              selectedMetric as keyof MetricData
+            ] || 0;
             return Number(value);
           }),
-          backgroundColor: '#f97316', // orange-500
+          backgroundColor: '#f97316',
           borderRadius: 6,
         },
       ],
@@ -236,11 +230,9 @@ const Metrics: React.FC = () => {
     try {
       // Check if data exists and has at least one row
       if (!data || !data.length || !data[0]) {
-        console.error('Data check failed:', { data });
         throw new Error('No data available to analyze');
       }
 
-      // Convert data to CSV string with headers
       const headers = [
         'timestamp',
         'container_name',
@@ -269,21 +261,13 @@ const Metrics: React.FC = () => {
         ]
           .map((value) => {
             if (value === null || value === undefined) return '';
-            if (typeof value === 'string')
-              return `"${value.replace(/"/g, '""')}"`;
+            if (typeof value === 'string') return `"${value.replace(/"/g, '""')}"`;
             return value.toString();
           })
           .join(',')
       );
 
       const csvData = [headers, ...rows].join('\n');
-
-      console.log('Sending request to /api/chat with:', {
-        messageLength: newMessage.length,
-        message: newMessage,
-        csvLength: csvData.length,
-        csvPreview: csvData.slice(0, 200),
-      });
 
       const response = await fetch('http://localhost:5000/api/chat', {
         method: 'POST',
@@ -296,52 +280,62 @@ const Metrics: React.FC = () => {
         }),
       });
 
-      const responseText = await response.text();
-      console.log('Raw response:', responseText);
+      const result = await response.json();
 
       if (!response.ok) {
-        console.error('Server error:', {
-          status: response.status,
-          statusText: response.statusText,
-          response: responseText,
-        });
-        throw new Error(`Server error: ${responseText}`);
+        throw new Error(result.error || 'Failed to get response from server');
       }
 
-      let result;
-      try {
-        result = JSON.parse(responseText);
-      } catch (e) {
-        console.error('Failed to parse JSON response:', e);
-        throw new Error('Invalid JSON response from server');
+      if (!result.response) {
+        throw new Error('Invalid response format from server');
       }
 
-      if (!result || !result.response) {
-        console.error('Invalid response format:', result);
-        throw new Error('Invalid response from server');
-      }
+      setMessages((prev) => [
+        ...prev,
+        { role: 'assistant', content: result.response },
+      ]);
 
-      console.log('Successful response:', result);
-
-      const assistantMessage = {
-        role: 'assistant' as const,
-        content: result.response,
-      };
-      setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
-      console.error('Error in handleSendMessage:', error);
+      console.error('Error in chat:', error);
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: `Error: ${
-            error instanceof Error ? error.message : 'Failed to process request'
-          }`,
+          content: `Error: ${error instanceof Error ? error.message : 'Failed to process request'}`,
         },
       ]);
     } finally {
       setIsLoading(false);
     }
+  };
+
+  const getDistroColor = (distro: string): string => {
+    const colors: { [key: string]: string } = {
+      'Ubuntu': '#E95420',
+      'Debian': '#A81D33',
+      'AmazonLinux': '#FF9900',
+      'OracleLinux': '#C74634',
+      // Add more distro colors as needed
+    };
+    
+    const distroKey = Object.keys(colors).find(key => distro.includes(key));
+    return distroKey ? colors[distroKey] : '#666666';
+  };
+
+  const getDistroInitials = (distro: string): string => {
+    const name = distro.replace(/[0-9.]/g, '');
+    return name.slice(0, 2).toUpperCase();
+  };
+
+  // Add this function to calculate average metrics
+  const getAverageMetrics = () => {
+    if (!data.length) return { completion: 0, cpu: 0, memory: 0 };
+    
+    return {
+      completion: data.reduce((acc, d) => acc + d.code_execution_time_seconds * 1000, 0) / data.length,
+      cpu: data.reduce((acc, d) => acc + d.cpu_usage_percentage, 0) / data.length,
+      memory: data.reduce((acc, d) => acc + d.memory_usage_mb, 0) / data.length,
+    };
   };
 
   return (
@@ -445,268 +439,41 @@ const Metrics: React.FC = () => {
           </div>
         </div>
         <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-          <div className='bg-white rounded-lg p-6 shadow-sm'>
-            <div className='flex items-center gap-4 mb-6'>
-              <div className='bg-[#E95420] rounded-lg p-2'>
-                <span className='text-white font-bold'>UB</span>
-              </div>
-              <div className='flex items-center gap-2'>
-                <span className='font-bold'>Ubuntu 20.04</span>
-                <span className='bg-yellow-400 text-xs px-2 py-1 rounded-full'>
-                  #1
-                </span>
-              </div>
-            </div>
-            <div className='space-y-4'>
-              <div>
-                <div className='flex justify-between mb-1'>
-                  <span>Completion Time</span>
-                  <span>{ubuntuMetrics.completion.toFixed(1)}ms</span>
-                </div>
-                <div className='bg-gray-200 rounded-full h-2'>
-                  <div
-                    className='bg-blue-600 h-2 rounded-full'
-                    style={{
-                      width: `${(ubuntuMetrics.completion / 100) * 100}%`,
-                    }}
-                  ></div>
-                </div>
-              </div>
-              <div>
-                <div className='flex justify-between mb-1'>
-                  <span>CPU Usage</span>
-                  <span>{ubuntuMetrics.cpu.toFixed(1)}%</span>
-                </div>
-                <div className='bg-gray-200 rounded-full h-2'>
-                  <div
-                    className='bg-blue-600 h-2 rounded-full'
-                    style={{ width: `${ubuntuMetrics.cpu}%` }}
-                  ></div>
-                </div>
-              </div>
-              <div>
-                <div className='flex justify-between mb-1'>
-                  <span>Memory Usage</span>
-                  <span>{ubuntuMetrics.memory.toFixed(1)}MB</span>
-                </div>
-                <div className='bg-gray-200 rounded-full h-2'>
-                  <div
-                    className='bg-blue-600 h-2 rounded-full'
-                    style={{ width: `${(ubuntuMetrics.memory / 100) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className='bg-white rounded-lg p-6 shadow-sm'>
-            <div className='flex items-center gap-4 mb-6'>
-              <div className='bg-[#A81D33] rounded-lg p-2'>
-                <span className='text-white font-bold'>DEB</span>
-              </div>
-              <div className='flex items-center gap-2'>
-                <span className='font-bold'>Debian 11</span>
-                <span className='bg-gray-200 text-xs px-2 py-1 rounded-full'>
-                  #2
-                </span>
-              </div>
-            </div>
-            <div className='space-y-4'>
-              <div>
-                <div className='flex justify-between mb-1'>
-                  <span>Completion Time</span>
-                  <span>{debianMetrics.completion.toFixed(1)}ms</span>
-                </div>
-                <div className='bg-gray-200 rounded-full h-2'>
-                  <div
-                    className='bg-blue-600 h-2 rounded-full'
-                    style={{
-                      width: `${(debianMetrics.completion / 100) * 100}%`,
-                    }}
-                  ></div>
-                </div>
-              </div>
-              <div>
-                <div className='flex justify-between mb-1'>
-                  <span>CPU Usage</span>
-                  <span>{debianMetrics.cpu.toFixed(1)}%</span>
-                </div>
-                <div className='bg-gray-200 rounded-full h-2'>
-                  <div
-                    className='bg-blue-600 h-2 rounded-full'
-                    style={{ width: `${debianMetrics.cpu}%` }}
-                  ></div>
-                </div>
-              </div>
-              <div>
-                <div className='flex justify-between mb-1'>
-                  <span>Memory Usage</span>
-                  <span>{debianMetrics.memory.toFixed(1)}MB</span>
-                </div>
-                <div className='bg-gray-200 rounded-full h-2'>
-                  <div
-                    className='bg-blue-600 h-2 rounded-full'
-                    style={{ width: `${(debianMetrics.memory / 100) * 100}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-            <div className='bg-white rounded-lg p-6 shadow-sm'>
+          {sortedDistros.map((distro, index) => (
+            <div key={distro} className='bg-white rounded-lg p-6 shadow-sm'>
               <div className='flex items-center gap-4 mb-6'>
-                <div className='bg-[#E95420] rounded-lg p-2'>
-                  <span className='text-white font-bold'>AM</span>
+                <div className={`bg-[${getDistroColor(distro)}] rounded-lg p-2`}>
+                  <span className='text-white font-bold'>{getDistroInitials(distro)}</span>
                 </div>
                 <div className='flex items-center gap-2'>
-                  <span className='font-bold'>AmazonLinux2023</span>
-                  <span className='bg-yellow-400 text-xs px-2 py-1 rounded-full'>
-                    #3
+                  <span className='font-bold'>{distro}</span>
+                  <span className={`${index === 0 ? 'bg-yellow-400' : 'bg-gray-200'} text-xs px-2 py-1 rounded-full`}>
+                    #{index + 1}
                   </span>
                 </div>
               </div>
               <div className='space-y-4'>
-                <div>
-                  <div className='flex justify-between mb-1'>
-                    <span>Completion Time</span>
-                    <span>{amiMetrics.completion.toFixed(1)}ms</span>
-                  </div>
-                  <div className='bg-gray-200 rounded-full h-2'>
-                    <div
-                      className='bg-blue-600 h-2 rounded-full'
-                      style={{
-                        width: `${(amiMetrics.completion / 100) * 100}%`,
-                      }}
-                    ></div>
-                  </div>
-                </div>
-                <div>
-                  <div className='flex justify-between mb-1'>
-                    <span>CPU Usage</span>
-                    <span>{amiMetrics.cpu.toFixed(1)}%</span>
-                  </div>
-                  <div className='bg-gray-200 rounded-full h-2'>
-                    <div
-                      className='bg-blue-600 h-2 rounded-full'
-                      style={{ width: `${amiMetrics.cpu}%` }}
-                    ></div>
-                  </div>
-                </div>
-                <div>
-                  <div className='flex justify-between mb-1'>
-                    <span>Memory Usage</span>
-                    <span>{amiMetrics.memory.toFixed(1)}MB</span>
-                  </div>
-                  <div className='bg-gray-200 rounded-full h-2'>
-                    <div
-                      className='bg-blue-600 h-2 rounded-full'
-                      style={{
-                        width: `${(amiMetrics.memory / 100) * 100}%`,
-                      }}
-                    ></div>
-                  </div>
-                </div>
+                <MetricBar
+                  label="Completion Time"
+                  value={getMetrics(distro).completion}
+                  unit="ms"
+                />
+                <MetricBar
+                  label="CPU Usage"
+                  value={getMetrics(distro).cpu}
+                  unit="%"
+                />
+                <MetricBar
+                  label="Memory Usage"
+                  value={getMetrics(distro).memory}
+                  unit="MB"
+                />
               </div>
             </div>
-          </div>
-          <h2 className='text-xl font-bold mb-6 text-white'>
-            Performance Metrics
-          </h2>
-          <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
-            {/* Overall Completion Time */}
-            <div className='bg-white rounded-lg p-6 shadow-sm'>
-              <div className='flex justify-between items-center mb-4'>
-                <span className='font-semibold'>Overall Completion Time</span>
-                <span>↗️</span>
-              </div>
-              <div className='mb-4'>
-                <span className='text-2xl font-bold'>
-                  {(
-                    (ubuntuMetrics.completion + debianMetrics.completion) /
-                    2
-                  ).toFixed(1)}
-                  ms
-                </span>
-              </div>
-              <div className='bg-gray-200 rounded-full h-2 mb-4'>
-                <div
-                  className='bg-blue-600 h-2 rounded-full'
-                  style={{ width: '85%' }}
-                ></div>
-              </div>
-              <div className='grid grid-cols-5 gap-2'>
-                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day) => (
-                  <div key={day} className='text-center'>
-                    <div className='bg-blue-900 w-2 h-16 mx-auto mb-2'></div>
-                    <span className='text-xs text-gray-600'>{day}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className='bg-white rounded-lg p-6 shadow-sm'>
-              <div className='flex justify-between items-center mb-4'>
-                <span className='font-semibold'>CPU Usage Trend</span>
-                <span>📈</span>
-              </div>
-              <div className='mb-4'>
-                <span className='text-2xl font-bold'>
-                  {((ubuntuMetrics.cpu + debianMetrics.cpu) / 2).toFixed(1)}%
-                </span>
-              </div>
-              <div className='bg-gray-200 rounded-full h-2 mb-4'>
-                <div
-                  className='bg-blue-600 h-2 rounded-full'
-                  style={{
-                    width: `${(ubuntuMetrics.cpu + debianMetrics.cpu) / 2}%`,
-                  }}
-                ></div>
-              </div>
-              <div className='grid grid-cols-5 gap-2'>
-                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day) => (
-                  <div key={day} className='text-center'>
-                    <div className='bg-blue-900 w-2 h-16 mx-auto mb-2'></div>
-                    <span className='text-xs text-gray-600'>{day}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-            <div className='bg-white rounded-lg p-6 shadow-sm'>
-              <div className='flex justify-between items-center mb-4'>
-                <span className='font-semibold'>Memory Consumption</span>
-                <span>📊</span>
-              </div>
-              <div className='mb-4'>
-                <span className='text-2xl font-bold'>
-                  {((ubuntuMetrics.memory + debianMetrics.memory) / 2).toFixed(
-                    1
-                  )}
-                  MB
-                </span>
-              </div>
-              <div className='bg-gray-200 rounded-full h-2 mb-4'>
-                <div
-                  className='bg-blue-600 h-2 rounded-full'
-                  style={{
-                    width: `${
-                      (ubuntuMetrics.memory + debianMetrics.memory) / 2
-                    }%`,
-                  }}
-                ></div>
-              </div>
-              <div className='grid grid-cols-5 gap-2'>
-                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((day) => (
-                  <div key={day} className='text-center'>
-                    <div className='bg-blue-900 w-2 h-16 mx-auto mb-2'></div>
-                    <span className='text-xs text-gray-600'>{day}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </div>
+          ))}
         </div>
         <div>
-          <h2 className='text-xl font-bold mb-6 text-white'>
-            Performance Trends
-          </h2>
+          <h2 className='text-xl font-bold mb-6 text-white'>Performance Trends</h2>
           <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
             <div className='flex items-center gap-4 text-white'>
               <span>Average Completion Time</span>
@@ -715,9 +482,7 @@ const Metrics: React.FC = () => {
                 <div
                   className='bg-blue-600 h-2 rounded-full'
                   style={{
-                    width: `${
-                      (ubuntuMetrics.completion + debianMetrics.completion) / 2
-                    }%`,
+                    width: `${Math.min(getAverageMetrics().completion, 100)}%`,
                   }}
                 ></div>
               </div>
@@ -729,7 +494,7 @@ const Metrics: React.FC = () => {
                 <div
                   className='bg-blue-600 h-2 rounded-full'
                   style={{
-                    width: `${(ubuntuMetrics.cpu + debianMetrics.cpu) / 2}%`,
+                    width: `${Math.min(getAverageMetrics().cpu, 100)}%`,
                   }}
                 ></div>
               </div>
@@ -741,9 +506,7 @@ const Metrics: React.FC = () => {
                 <div
                   className='bg-blue-600 h-2 rounded-full'
                   style={{
-                    width: `${
-                      (ubuntuMetrics.memory + debianMetrics.memory) / 2
-                    }%`,
+                    width: `${Math.min(getAverageMetrics().memory, 100)}%`,
                   }}
                 ></div>
               </div>
@@ -754,5 +517,26 @@ const Metrics: React.FC = () => {
     </>
   );
 };
+
+interface MetricBarProps {
+  label: string;
+  value: number;
+  unit: string;
+}
+
+const MetricBar: React.FC<MetricBarProps> = ({ label, value, unit }) => (
+  <div>
+    <div className='flex justify-between mb-1'>
+      <span>{label}</span>
+      <span>{value.toFixed(1)}{unit}</span>
+    </div>
+    <div className='bg-gray-200 rounded-full h-2'>
+      <div
+        className='bg-blue-600 h-2 rounded-full'
+        style={{ width: `${(value / 100) * 100}%` }}
+      ></div>
+    </div>
+  </div>
+);
 
 export default Metrics;
