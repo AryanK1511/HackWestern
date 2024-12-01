@@ -95,9 +95,9 @@ def collect_stats_to_csv(
             time.sleep(1)
 
 
-def run_ui_docker_container():
+def run_ui():
     """
-    Runs the UI Docker container and opens the browser for access.
+    Runs the UI version of the tool
     """
     try:
         container = client.containers.run(

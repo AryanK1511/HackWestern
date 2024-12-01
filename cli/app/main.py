@@ -7,7 +7,7 @@ from app.constants import CONFIG_FILE_PATH, MACHINES, OUTPUT_FILE_NAME
 from app.utils import (
     read_config,
     run_docker_containers_and_collect_stats,
-    run_ui_docker_container,
+    run_ui,
 )
 from rich.console import Console
 from typing_extensions import Annotated
@@ -69,7 +69,7 @@ def studio():
     Launch the UI version of the tool.
     """
     console.print("[bold]Starting the UI...[/bold]")
-    run_ui_docker_container()
+    run_ui()
 
 
 @app.command()
