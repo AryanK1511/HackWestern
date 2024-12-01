@@ -25,7 +25,7 @@ export function NavMain({
           <SidebarMenuItem key={index}>
             <a href={item.url}>
               <SidebarMenuButton tooltip={item.title}>
-                {item.icon && <item.icon className='text-purple-600' />}
+                {item.icon && <item.icon className='text-blue-700' />}
                 <span>{item.title}</span>
               </SidebarMenuButton>
             </a>

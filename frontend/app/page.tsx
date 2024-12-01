@@ -47,7 +47,7 @@ const Dashboard: React.FC = () => {
             className='text-left relative z-10 p-8'
           >
             <h1 className='text-6xl font-bold'>
-              <span className='bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent'>
+              <span className='bg-gradient-to-r from-blue-400 via-blue-700 to-blue-900 bg-clip-text text-transparent text-stroke'>
                 tin
               </span>{' '}
               studio

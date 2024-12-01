@@ -187,12 +187,12 @@ export default function UploadForm() {
                             form.clearErrors('files');
                           }
                         }}
-                        className='text-purple-600 bg-gradient-to-r from-pink-50 to-purple-100 border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-500'
+                        className='text-blue-700 bg-gradient-to-r from-blue-50 to-blue-100 border-transparent focus:border-blue-500 focus:ring-2 focus:ring-blue-500'
                       />
-                      <FolderIcon className='absolute right-3 top-1/2 transform -translate-y-1/2 text-purple-500' />
+                      <FolderIcon className='absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-600' />
                     </div>
                   </FormControl>
-                  <FormDescription className='text-purple-500'>
+                  <FormDescription className='text-blue-600'>
                     Select the folder containing your project files
                   </FormDescription>
                   <FormMessage />
@@ -200,7 +200,7 @@ export default function UploadForm() {
               )}
             />
             {files.length > 0 && (
-              <div className='text-purple-600 bg-gradient-to-r from-pink-50 to-purple-100 p-3 rounded-md col-span-1 md:col-span-2'>
+              <div className='text-blue-600 bg-gradient-to-r from-blue-50 to-blue-100 p-3 rounded-md col-span-1 md:col-span-2'>
                 <strong>Selected Folder:</strong>{' '}
                 {files[0].webkitRelativePath.split('/')[0]}
               </div>
@@ -241,7 +241,7 @@ export default function UploadForm() {
                                 }}
                               />
                             </FormControl>
-                            <FormLabel className='text-purple-600 font-normal'>
+                            <FormLabel className='text-blue-600 font-normal'>
                               {machine.name}
                             </FormLabel>
                           </FormItem>
@@ -266,7 +266,7 @@ export default function UploadForm() {
                     defaultValue={field.value}
                   >
                     <FormControl>
-                      <SelectTrigger className='bg-gradient-to-r from-pink-50 to-purple-100 text-purple-600'>
+                      <SelectTrigger className='bg-gradient-to-r from-blue-50 to-blue-100 text-blue-600'>
                         <SelectValue placeholder='Select a language' />
                       </SelectTrigger>
                     </FormControl>
@@ -292,12 +292,12 @@ export default function UploadForm() {
                       <Input
                         placeholder='e.g., main.py'
                         {...field}
-                        className='text-purple-600 bg-gradient-to-r from-pink-50 to-purple-100 border-transparent focus:border-purple-500 focus:ring-2 focus:ring-purple-500'
+                        className='text-blue-600 bg-gradient-to-r from-blue-50 to-blue-100 border-transparent focus:border-blue-500 focus:ring-2 focus:ring-blue-500'
                       />
-                      <CodeIcon className='absolute right-3 top-1/2 transform -translate-y-1/2 text-purple-500' />
+                      <CodeIcon className='absolute right-3 top-1/2 transform -translate-y-1/2 text-blue-500' />
                     </div>
                   </FormControl>
-                  <FormDescription className='text-purple-500'>
+                  <FormDescription className='text-blue-500'>
                     The main file of your application
                   </FormDescription>
                   <FormMessage />
@@ -313,7 +313,7 @@ export default function UploadForm() {
                     exit={{ opacity: 0 }}
                     className='flex justify-center items-center'
                   >
-                    <ServerIcon className='animate-pulse text-purple-600 w-8 h-8' />
+                    <ServerIcon className='animate-pulse text-blue-600 w-8 h-8' />
                   </motion.div>
                 ) : (
                   <>
@@ -324,14 +324,14 @@ export default function UploadForm() {
                         download
                         target='_blank'
                         rel='noopener noreferrer'
-                        className='w-full text-white bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700'
+                        className='w-full text-white bg-gradient-to-r from-blue-400 to-blue-700 hover:from-blue-500 hover:to-blue-800'
                       >
                         Download
                       </Button>
                     )}
                     <Button
                       type='submit'
-                      className='w-full mt-4 text-white bg-gradient-to-r from-pink-500 to-purple-600 hover:from-pink-600 hover:to-purple-700'
+                      className='w-full mt-4 text-white bg-gradient-to-r from-blue-400 to-blue-700 hover:from-blue-500 hover:to-blue-800'
                     >
                       Submit
                     </Button>
