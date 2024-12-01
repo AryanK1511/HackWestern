@@ -194,7 +194,7 @@ const Metrics: React.FC = () => {
             ] || 0;
             return maxValue ? (Number(value) / maxValue) * 100 : 0;
           }),
-          backgroundColor: '#f97316',
+          backgroundColor: '#275bdd',
           borderRadius: 6,
         },
       ],
@@ -484,7 +484,7 @@ const Metrics: React.FC = () => {
           <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
             <div className='flex items-center gap-4 text-black'>
               <span>Average Completion Time</span>
-              <span className='text-green-500 text-sm'>{getAverageMetrics().completion.toFixed(2)}ms</span>
+              <span className='text-black text-sm'>{getAverageMetrics().completion.toFixed(2)}ms</span>
               <div className='flex-1 bg-gray-200 rounded-full h-2'>
                 <div
                   className='bg-blue-600 h-2 rounded-full'
@@ -496,7 +496,7 @@ const Metrics: React.FC = () => {
             </div>
             <div className='flex items-center gap-4 text-black'>
               <span>Average CPU Usage</span>
-              <span className='text-red-500 text-sm'>{getAverageMetrics().cpu.toFixed(2)}%</span> 
+              <span className='text-black text-sm'>{getAverageMetrics().cpu.toFixed(2)}%</span> 
               <div className='flex-1 bg-gray-200 rounded-full h-2'>
                 <div
                   className='bg-blue-600 h-2 rounded-full'
@@ -508,7 +508,7 @@ const Metrics: React.FC = () => {
             </div>
             <div className='flex items-center gap-4 text-black'>
               <span>Average Memory Usage</span>
-              <span className='text-red-500 text-sm'>{getAverageMetrics().completion.toFixed(2)}MB</span> 
+              <span className='text-black text-sm'>{getAverageMetrics().completion.toFixed(2)}MB</span> 
               <div className='flex-1 bg-gray-200 rounded-full h-2'>
                 <div
                   className='bg-blue-600 h-2 rounded-full'
