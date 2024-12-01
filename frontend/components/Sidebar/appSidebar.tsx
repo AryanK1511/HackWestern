@@ -1,7 +1,7 @@
 'use client';
 
 import * as React from 'react';
-import { ChartArea, SquareTerminal } from 'lucide-react';
+import { SquareTerminal, BarChart } from 'lucide-react';
 
 import { NavMain } from '@/components/Sidebar/navMain';
 import {
@@ -22,7 +22,7 @@ const data = {
     {
       title: 'Metrics',
       url: '/metrics',
-      icon: ChartArea,
+      icon: BarChart,
     },
   ],
 };
