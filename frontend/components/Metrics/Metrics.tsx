@@ -95,6 +95,8 @@ const Metrics: React.FC = () => {
         const validData = result.data.filter(
           (row: any) => row.timestamp !== null
         );
+        console.log('Valid');
+        console.log(validData);
         setData(validData as MetricData[]);
 
         console.log('Valid data loaded:', {
