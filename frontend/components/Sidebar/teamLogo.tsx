@@ -14,10 +14,10 @@ export function TeamLogo() {
       <SidebarMenuItem>
         <SidebarMenuButton size='lg'>
           <div className='flex aspect-square size-8 items-center justify-center rounded-lg bg-sidebar-primary text-sidebar-primary-foreground'>
-            {/* Logo placeholder */}
+            {<img src='/favicon.ico' alt='tin.' />}
           </div>
           <div className='grid flex-1 text-left text-sm leading-tight'>
-            <span className='truncate font-semibold'>Tin</span>
+            <span className='truncate font-semibold'>tin.</span>
           </div>
         </SidebarMenuButton>
       </SidebarMenuItem>

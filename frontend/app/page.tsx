@@ -48,9 +48,9 @@ const Dashboard: React.FC = () => {
           >
             <h1 className='text-6xl font-bold'>
               <span className='bg-gradient-to-r from-pink-500 to-purple-600 bg-clip-text text-transparent'>
-                Tin
+                tin
               </span>{' '}
-              Studio
+              studio
             </h1>
 
             <motion.p
