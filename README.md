@@ -6,8 +6,6 @@ A powerful tool to test your code across multiple machines and gather comprehens
 
 ## Running this tool locally
 
-This tool is very complex in the way that it works so it is very important that you run this tool exactly how this documentation tells you to do it. First you will clone the github repo and then cd into it. You will see a configure-tool.sh shell script that you need to run to setup some basic configs in your directory.
-
 ## Resources
 
 - [Typer CLI](https://typer.tiangolo.com)

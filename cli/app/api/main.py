@@ -1,21 +1,21 @@
 import json
+import logging
 import os
 import shutil
 from http.client import HTTPException
 from io import StringIO
-import logging
-import pandas as pd
-from openai import OpenAI
-from dotenv import load_dotenv
 
 import docker
+import pandas as pd
 from app.api.utils import (
     create_machine_config,
     run_code_in_container,
     save_uploaded_file,
 )
-from fastapi import FastAPI, File, Form, UploadFile, HTTPException
+from dotenv import load_dotenv
+from fastapi import FastAPI, File, Form, HTTPException, UploadFile
 from fastapi.middleware.cors import CORSMiddleware
+from openai import OpenAI
 from pydantic import BaseModel
 
 # Set up logging
@@ -38,10 +38,12 @@ app.add_middleware(
 UPLOAD_DIRECTORY = "uploads"
 client = docker.from_env()
 
+
 # AI Chat Classes and Routes
 class ChatRequest(BaseModel):
     csv_data: str
     user_prompt: str
+
 
 class ChatGPTInteraction:
     def __init__(self):
@@ -84,7 +86,9 @@ class ChatGPTInteraction:
             logger.error(f"Error generating response: {str(e)}")
             raise HTTPException(status_code=500, detail=str(e))
 
+
 chat_interaction = ChatGPTInteraction()
+
 
 @app.post("/api/chat")
 async def chat(request: ChatRequest):
@@ -117,6 +121,7 @@ async def chat(request: ChatRequest):
     except Exception as e:
         logger.error(f"Unexpected error: {str(e)}")
         return {"error": f"Unexpected error: {str(e)}"}, 500
+
 
 # File Upload Route
 @app.post("/upload")
@@ -186,6 +191,6 @@ async def process_upload(
 
     return {"message": "CSV saved to public folder", "path": "tin-report.csv"}
 
+
 if __name__ == "__main__":
-    import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=5000, reload=True)
+    app()

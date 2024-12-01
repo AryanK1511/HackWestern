@@ -144,17 +144,19 @@ const Metrics: React.FC = () => {
     const containerData = data.find((d) => d.container_name === containerName);
     if (!containerData) return { cpu: 0, memory: 0, completion: 0 };
 
-    const maxCompletion = Math.max(...data.map((d) => d.code_execution_time_seconds)) || 1;
+    const maxCompletion =
+      Math.max(...data.map((d) => d.code_execution_time_seconds)) || 1;
     const maxMemory = Math.max(...data.map((d) => d.memory_usage_mb)) || 1;
-  
+
     return {
       cpu: containerData.cpu_usage_percentage,
       memory: (containerData.memory_usage_mb / maxMemory) * 100,
-      completion: (containerData.code_execution_time_seconds / maxCompletion) * 100,
+      completion:
+        (containerData.code_execution_time_seconds / maxCompletion) * 100,
     };
   };
 
-  const sortedDistros = [...new Set(data.map(d => d.container_name))].sort(
+  const sortedDistros = [...new Set(data.map((d) => d.container_name))].sort(
     (a, b) => getMetricValue(b) - getMetricValue(a)
   );
 
@@ -180,18 +182,20 @@ const Metrics: React.FC = () => {
 
   const getChartData = () => {
     const maxValue = Math.max(
-        ...data.map((d) => Number(d[selectedMetric as keyof MetricData]) || 0)
+      ...data.map((d) => Number(d[selectedMetric as keyof MetricData]) || 0)
     );
 
     const chartData = {
       labels: sortedDistros,
       datasets: [
         {
-          label: metricOptions.find((m) => m.value === selectedMetric)?.label || '',
+          label:
+            metricOptions.find((m) => m.value === selectedMetric)?.label || '',
           data: sortedDistros.map((distro) => {
-            const value = data.find((d) => d.container_name === distro)?.[
-              selectedMetric as keyof MetricData
-            ] || 0;
+            const value =
+              data.find((d) => d.container_name === distro)?.[
+                selectedMetric as keyof MetricData
+              ] || 0;
             return maxValue ? (Number(value) / maxValue) * 100 : 0;
           }),
           backgroundColor: '#275bdd',
@@ -268,7 +272,8 @@ const Metrics: React.FC = () => {
         ]
           .map((value) => {
             if (value === null || value === undefined) return '';
-            if (typeof value === 'string') return `"${value.replace(/"/g, '""')}"`;
+            if (typeof value === 'string')
+              return `"${value.replace(/"/g, '""')}"`;
             return value.toString();
           })
           .join(',')
@@ -276,7 +281,7 @@ const Metrics: React.FC = () => {
 
       const csvData = [headers, ...rows].join('\n');
 
-      const response = await fetch('http://localhost:5000/api/chat', {
+      const response = await fetch('http://localhost:8000/api/chat', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -301,14 +306,15 @@ const Metrics: React.FC = () => {
         ...prev,
         { role: 'assistant', content: result.response },
       ]);
-
     } catch (error) {
       console.error('Error in chat:', error);
       setMessages((prev) => [
         ...prev,
         {
           role: 'assistant',
-          content: `Error: ${error instanceof Error ? error.message : 'Failed to process request'}`,
+          content: `Error: ${
+            error instanceof Error ? error.message : 'Failed to process request'
+          }`,
         },
       ]);
     } finally {
@@ -318,14 +324,14 @@ const Metrics: React.FC = () => {
 
   const getDistroColor = (distro: string): string => {
     const colors: { [key: string]: string } = {
-      'Ubuntu': '#E95420',
-      'Debian': '#A81D33',
-      'AmazonLinux': '#FF9900',
-      'OracleLinux': '#C74634',
+      Ubuntu: '#E95420',
+      Debian: '#A81D33',
+      AmazonLinux: '#FF9900',
+      OracleLinux: '#C74634',
       // Add more distro colors as needed
     };
-    
-    const distroKey = Object.keys(colors).find(key => distro.includes(key));
+
+    const distroKey = Object.keys(colors).find((key) => distro.includes(key));
     return distroKey ? colors[distroKey] : '#666666';
   };
 
@@ -337,10 +343,13 @@ const Metrics: React.FC = () => {
   // Add this function to calculate average metrics
   const getAverageMetrics = () => {
     if (!data.length) return { completion: 0, cpu: 0, memory: 0 };
-    
+
     return {
-      completion: data.reduce((acc, d) => acc + d.code_execution_time_seconds * 1000, 0) / data.length,
-      cpu: data.reduce((acc, d) => acc + d.cpu_usage_percentage, 0) / data.length,
+      completion:
+        data.reduce((acc, d) => acc + d.code_execution_time_seconds * 1000, 0) /
+        data.length,
+      cpu:
+        data.reduce((acc, d) => acc + d.cpu_usage_percentage, 0) / data.length,
       memory: data.reduce((acc, d) => acc + d.memory_usage_mb, 0) / data.length,
     };
   };
@@ -449,42 +458,54 @@ const Metrics: React.FC = () => {
           {sortedDistros.map((distro, index) => (
             <div key={distro} className='bg-white rounded-lg p-6 shadow-sm'>
               <div className='flex items-center gap-4 mb-6'>
-                <div className={`bg-[${getDistroColor(distro)}] rounded-lg p-2`}>
-                  <span className='text-white font-bold'>{getDistroInitials(distro)}</span>
+                <div
+                  className={`bg-[${getDistroColor(distro)}] rounded-lg p-2`}
+                >
+                  <span className='text-white font-bold'>
+                    {getDistroInitials(distro)}
+                  </span>
                 </div>
                 <div className='flex items-center gap-2'>
                   <span className='font-bold'>{distro}</span>
-                  <span className={`${index === 0 ? 'bg-yellow-400' : 'bg-gray-200'} text-xs px-2 py-1 rounded-full`}>
+                  <span
+                    className={`${
+                      index === 0 ? 'bg-yellow-400' : 'bg-gray-200'
+                    } text-xs px-2 py-1 rounded-full`}
+                  >
                     #{index + 1}
                   </span>
                 </div>
               </div>
               <div className='space-y-4'>
                 <MetricBar
-                  label="Completion Time"
+                  label='Completion Time'
                   value={getMetrics(distro).completion}
-                  unit="ms"
+                  unit='ms'
                 />
                 <MetricBar
-                  label="CPU Usage"
+                  label='CPU Usage'
                   value={getMetrics(distro).cpu}
-                  unit="%"
+                  unit='%'
                 />
                 <MetricBar
-                  label="Memory Usage"
+                  label='Memory Usage'
                   value={getMetrics(distro).memory}
-                  unit="MB"
+                  unit='MB'
                 />
               </div>
             </div>
           ))}
         </div>
         <div>
-          <h2 className='text-xl font-bold mb-6 text-white'>Performance Trends</h2>
+          <h2 className='text-xl font-bold mb-6 text-white'>
+            Performance Trends
+          </h2>
           <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
             <div className='flex items-center gap-4 text-black'>
               <span>Average Completion Time</span>
-              <span className='text-black text-sm'>{getAverageMetrics().completion.toFixed(2)}ms</span>
+              <span className='text-black text-sm'>
+                {getAverageMetrics().completion.toFixed(2)}ms
+              </span>
               <div className='flex-1 bg-gray-200 rounded-full h-2'>
                 <div
                   className='bg-blue-600 h-2 rounded-full'
@@ -496,7 +517,9 @@ const Metrics: React.FC = () => {
             </div>
             <div className='flex items-center gap-4 text-black'>
               <span>Average CPU Usage</span>
-              <span className='text-black text-sm'>{getAverageMetrics().cpu.toFixed(2)}%</span> 
+              <span className='text-black text-sm'>
+                {getAverageMetrics().cpu.toFixed(2)}%
+              </span>
               <div className='flex-1 bg-gray-200 rounded-full h-2'>
                 <div
                   className='bg-blue-600 h-2 rounded-full'
@@ -508,7 +531,9 @@ const Metrics: React.FC = () => {
             </div>
             <div className='flex items-center gap-4 text-black'>
               <span>Average Memory Usage</span>
-              <span className='text-black text-sm'>{getAverageMetrics().completion.toFixed(2)}MB</span> 
+              <span className='text-black text-sm'>
+                {getAverageMetrics().completion.toFixed(2)}MB
+              </span>
               <div className='flex-1 bg-gray-200 rounded-full h-2'>
                 <div
                   className='bg-blue-600 h-2 rounded-full'
@@ -532,18 +557,21 @@ interface MetricBarProps {
 }
 
 const MetricBar: React.FC<MetricBarProps> = ({ label, value, unit }) => (
-    <div>
-      <div className='flex justify-between mb-1'>
-        <span>{label}</span>
-        <span>{value.toFixed(1)}{unit}</span>
-      </div>
-      <div className='bg-gray-200 rounded-full h-2'>
-        <div
-          className='bg-blue-600 h-2 rounded-full'
-          style={{ width: `${Math.min(value, 100)}%` }} // Cap at 100%
-        ></div>
-      </div>
+  <div>
+    <div className='flex justify-between mb-1'>
+      <span>{label}</span>
+      <span>
+        {value.toFixed(1)}
+        {unit}
+      </span>
     </div>
-  );
+    <div className='bg-gray-200 rounded-full h-2'>
+      <div
+        className='bg-blue-600 h-2 rounded-full'
+        style={{ width: `${Math.min(value, 100)}%` }} // Cap at 100%
+      ></div>
+    </div>
+  </div>
+);
 
 export default Metrics;
