@@ -482,7 +482,7 @@ const Metrics: React.FC = () => {
                 <div
                   className='bg-blue-600 h-2 rounded-full'
                   style={{
-                    width: `${Math.min(getAverageMetrics().completion, 100)}%`,
+                    width: `${Math.min(getAverageMetrics().completion / 1000, 100)}%`,
                   }}
                 ></div>
               </div>
@@ -531,10 +531,10 @@ const MetricBar: React.FC<MetricBarProps> = ({ label, value, unit }) => (
       <span>{value.toFixed(1)}{unit}</span>
     </div>
     <div className='bg-gray-200 rounded-full h-2'>
-      <div
-        className='bg-blue-600 h-2 rounded-full'
-        style={{ width: `${(value / 100) * 100}%` }}
-      ></div>
+    <div
+      className='bg-blue-600 h-2 rounded-full'
+      style={{ width: `${Math.min((value / 100) * 100, 100)}%` }}
+    ></div>
     </div>
   </div>
 );
