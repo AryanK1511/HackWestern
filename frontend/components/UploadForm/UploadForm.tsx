@@ -24,7 +24,7 @@ import {
   FormMessage,
 } from '@/components/ui/form';
 import { Checkbox } from '@/components/ui/checkbox';
-import { FolderIcon, CodeIcon, ServerIcon } from 'lucide-react';
+import { FolderIcon, CodeIcon, ServerIcon, CloudFog } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 
 const MACHINES = [
@@ -36,6 +36,11 @@ const MACHINES = [
   {
     name: 'Debian11',
     image: 'debian:bullseye',
+    enabled: true,
+  },
+  {
+    name: 'AmazonLinux2023',
+    image: 'amazonlinux:2023',
     enabled: true,
   },
 ];
@@ -65,6 +70,8 @@ export default function UploadForm() {
   function onSubmit(values: z.infer<typeof formSchema>) {
     setIsSubmitting(true);
     const formData = new FormData();
+
+    console.log(JSON.stringify(values.machines));
 
     files.forEach((file) => {
       formData.append('files', file);

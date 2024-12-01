@@ -72,7 +72,7 @@ const Metrics: React.FC = () => {
     async function fetchData() {
       try {
         console.log('Fetching data from CSV...');
-        const response = await fetch('/testdata.csv');
+        const response = await fetch('/tin-report.csv');
         if (!response.ok) {
           throw new Error(
             `Failed to fetch CSV: ${response.status} ${response.statusText}`
@@ -151,8 +151,9 @@ const Metrics: React.FC = () => {
 
   const ubuntuMetrics = getMetrics('Ubuntu20.04');
   const debianMetrics = getMetrics('Debian11');
+  const amiMetrics = getMetrics('AmazonLinux2023');
 
-  const sortedDistros = ['Ubuntu20.04', 'Debian11'].sort(
+  const sortedDistros = ['Ubuntu20.04', 'Debian11', 'AmazonLinux2023'].sort(
     (a, b) => getMetricValue(b) - getMetricValue(a)
   );
 
@@ -178,12 +179,12 @@ const Metrics: React.FC = () => {
 
   const getChartData = () => {
     const chartData = {
-      labels: ['Ubuntu20.04', 'Debian11'],
+      labels: ['Ubuntu20.04', 'Debian11', 'AmazonLinux2023'],
       datasets: [
         {
           label:
             metricOptions.find((m) => m.value === selectedMetric)?.label || '',
-          data: ['Ubuntu20.04', 'Debian11'].map((distro) => {
+          data: ['Ubuntu20.04', 'Debian11', 'AmazonLinux2023'].map((distro) => {
             const value =
               data.find((d) => d.container_name === distro)?.[
                 selectedMetric as keyof MetricData
@@ -433,7 +434,7 @@ const Metrics: React.FC = () => {
             </button>
           </div>
         </div>
-        <div className='flex items-center justify-between text-white'>
+        <div className='flex items-center justify-between text-black'>
           <h1 className='text-2xl font-bold'>Analytics</h1>
           <div className='flex gap-4'>
             <span>Completion Time ⬆️</span>
@@ -548,50 +549,63 @@ const Metrics: React.FC = () => {
               </div>
             </div>
           </div>
-          <div className='bg-white rounded-lg p-6 shadow-sm opacity-50'>
-            <div className='flex items-center gap-4 mb-6'>
-              <div className='bg-gray-400 rounded-lg p-2'>
-                <span className='text-white font-bold'>NEW</span>
-              </div>
-              <div className='flex items-center gap-2'>
-                <span className='font-bold'>Coming Soon</span>
-                <span className='bg-gray-200 text-xs px-2 py-1 rounded-full'>
-                  #3
-                </span>
-              </div>
-            </div>
-            <div className='space-y-4'>
-              <div>
-                <div className='flex justify-between mb-1'>
-                  <span>Completion Time</span>
-                  <span>--</span>
+          <div className='grid grid-cols-1 md:grid-cols-3 gap-6'>
+            <div className='bg-white rounded-lg p-6 shadow-sm'>
+              <div className='flex items-center gap-4 mb-6'>
+                <div className='bg-[#E95420] rounded-lg p-2'>
+                  <span className='text-white font-bold'>AM</span>
                 </div>
-                <div className='bg-gray-200 rounded-full h-2'>
-                  <div className='bg-gray-400 h-2 rounded-full w-0'></div>
+                <div className='flex items-center gap-2'>
+                  <span className='font-bold'>AmazonLinux2023</span>
+                  <span className='bg-yellow-400 text-xs px-2 py-1 rounded-full'>
+                    #3
+                  </span>
                 </div>
               </div>
-              <div>
-                <div className='flex justify-between mb-1'>
-                  <span>CPU Usage</span>
-                  <span>--</span>
+              <div className='space-y-4'>
+                <div>
+                  <div className='flex justify-between mb-1'>
+                    <span>Completion Time</span>
+                    <span>{amiMetrics.completion.toFixed(1)}ms</span>
+                  </div>
+                  <div className='bg-gray-200 rounded-full h-2'>
+                    <div
+                      className='bg-blue-600 h-2 rounded-full'
+                      style={{
+                        width: `${(amiMetrics.completion / 100) * 100}%`,
+                      }}
+                    ></div>
+                  </div>
                 </div>
-                <div className='bg-gray-200 rounded-full h-2'>
-                  <div className='bg-gray-400 h-2 rounded-full w-0'></div>
+                <div>
+                  <div className='flex justify-between mb-1'>
+                    <span>CPU Usage</span>
+                    <span>{amiMetrics.cpu.toFixed(1)}%</span>
+                  </div>
+                  <div className='bg-gray-200 rounded-full h-2'>
+                    <div
+                      className='bg-blue-600 h-2 rounded-full'
+                      style={{ width: `${amiMetrics.cpu}%` }}
+                    ></div>
+                  </div>
                 </div>
-              </div>
-              <div>
-                <div className='flex justify-between mb-1'>
-                  <span>Memory Usage</span>
-                  <span>--</span>
-                </div>
-                <div className='bg-gray-200 rounded-full h-2'>
-                  <div className='bg-gray-400 h-2 rounded-full w-0'></div>
+                <div>
+                  <div className='flex justify-between mb-1'>
+                    <span>Memory Usage</span>
+                    <span>{amiMetrics.memory.toFixed(1)}MB</span>
+                  </div>
+                  <div className='bg-gray-200 rounded-full h-2'>
+                    <div
+                      className='bg-blue-600 h-2 rounded-full'
+                      style={{
+                        width: `${(amiMetrics.memory / 100) * 100}%`,
+                      }}
+                    ></div>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
-        </div>
-        <div>
           <h2 className='text-xl font-bold mb-6 text-white'>
             Performance Metrics
           </h2>

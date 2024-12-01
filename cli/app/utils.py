@@ -1,5 +1,6 @@
 import csv
 import os
+import subprocess
 import time
 import webbrowser
 from pathlib import Path
@@ -95,13 +96,62 @@ def collect_stats_to_csv(
             time.sleep(1)
 
 
-def run_ui():
+def stop_containers_on_port(port):
     """
-    Runs the UI version of the tool
+    Stops any containers that are using the specified port.
     """
     try:
+        containers = client.containers.list(all=True)
+
+        for container in containers:
+            container_info = container.attrs
+            for port_binding in container_info["NetworkSettings"]["Ports"]:
+                if port_binding == f"{port}/tcp":
+                    console.print(
+                        f"[bold yellow]Stopping container '{container.name}' on port {port}...[/bold yellow]"
+                    )
+                    container.stop()
+                    container.remove()
+                    console.print(
+                        f"[bold green]Stopped and removed container '{container.name}'.[/bold green]"
+                    )
+                    break
+    except Exception as e:
+        console.print(
+            f"[bold red]Error stopping containers on port {port}: {e}[/bold red]"
+        )
+
+
+def start_backend():
+    """
+    Starts the backend with the FastAPI app.
+    """
+    try:
+        subprocess.Popen(
+            ["uvicorn", "app.api.main:app", "--reload"],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+        )
+        console.print("[bold green]Started backend locally using uvicorn.[/bold green]")
+    except Exception as e:
+        console.print(f"[bold red]Error running backend locally: {e}[/bold red]")
+
+
+def run_ui():
+    """
+    Runs the UI version of the tool.
+    """
+    try:
+        stop_containers_on_port(8000)
+        start_backend()
+        time.sleep(5)
+        stop_containers_on_port(3000)
+
         container = client.containers.run(
-            "tin-ui", name="tin-ui", ports={"3000/tcp": 3000}, detach=True
+            "tin-ui",  # Replace with your UI image name
+            name="tin-ui",
+            ports={"3000/tcp": 3000},
+            detach=True,
         )
         console.print(
             f"[bold green]Started UI container '{container.name}' using image 'tin-ui'.[/bold green]"
