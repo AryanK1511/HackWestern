@@ -85,7 +85,7 @@ def create_config():
     config_data = {
         "machines": [
             {"name": m["name"], "image": m["image"], "enabled": m["enabled"]}
-            for m in MACHINES[0]
+            for m in MACHINES
         ]
     }
 

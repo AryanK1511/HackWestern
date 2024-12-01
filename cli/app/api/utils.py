@@ -31,36 +31,27 @@ def run_code_in_container(machine_configs, folder_path, language, entryPoint):
 
     for machine_config in machine_configs:
         try:
-            container = None
-
-            if machine_config["image"] == "amazonlinux:2023":
-                container = client.containers.run(
-                    machine_config["image"],
-                    name=machine_config["name"],
-                    command="bash /scripts/amazon_install.sh",
-                    volumes={
-                        abs_folder_path: {"bind": "/app", "mode": "rw"},
-                        scripts_path: {"bind": "/scripts", "mode": "rw"},
-                    },
-                    working_dir="/app",
-                    stdin_open=True,
-                    tty=True,
-                    detach=True,
-                )
+            command = None
+            if machine_config["name"].startswith("AmazonLinux2"):
+                command = "bash /scripts/amazon_install.sh"
+            elif machine_config["name"].startswith("Oracle"):
+                command = "bash /scripts/oracle_install.sh"
             else:
-                container = client.containers.run(
-                    machine_config["image"],
-                    name=machine_config["name"],
-                    command="bash /scripts/linux_install.sh",
-                    volumes={
-                        abs_folder_path: {"bind": "/app", "mode": "rw"},
-                        scripts_path: {"bind": "/scripts", "mode": "rw"},
-                    },
-                    working_dir="/app",
-                    stdin_open=True,
-                    tty=True,
-                    detach=True,
-                )
+                command = "bash /scripts/linux_install.sh"
+
+            container = client.containers.run(
+                machine_config["image"],
+                name=machine_config["name"],
+                command=command,
+                volumes={
+                    abs_folder_path: {"bind": "/app", "mode": "rw"},
+                    scripts_path: {"bind": "/scripts", "mode": "rw"},
+                },
+                working_dir="/app",
+                stdin_open=True,
+                tty=True,
+                detach=True,
+            )
 
             containers.append(container)
         except Exception as e:
