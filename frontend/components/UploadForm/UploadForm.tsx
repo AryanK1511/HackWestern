@@ -101,7 +101,7 @@ export default function UploadForm() {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      machines: [],
+      machines: MACHINES.map(machine => machine.name),
       language: 'python',
       entryPoint: '',
     },
